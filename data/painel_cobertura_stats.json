@@ -1,0 +1,200 @@
+{
+ "gerado_em": "2026-08-19T00:15:48",
+ "fonte": "PNCP, coleta estadual reconciliada (data/raw/pncp_hive/licitacoes/ + data/silver/contratos.parquet)",
+ "total_licitacoes": 263451,
+ "total_contratos": 218991,
+ "total_geral": 482442,
+ "municipios_cobertos": 397,
+ "municipios_total_pr": 399,
+ "periodo": "2024-2026",
+ "ano_parcial": 2026,
+ "distribuicao_total_geral": {
+  "minimo": 1,
+  "p25": 285.0,
+  "mediana": 589.0,
+  "p75": 979.0,
+  "maximo": 97981
+ },
+ "top20": [
+  {
+   "codigo_ibge": "4106902",
+   "municipio": "Curitiba",
+   "total_licitacoes": 43792,
+   "total_contratos": 54189,
+   "total_geral": 97981,
+   "rank": 1
+  },
+  {
+   "codigo_ibge": "4115200",
+   "municipio": "Maringá",
+   "total_licitacoes": 6451,
+   "total_contratos": 4267,
+   "total_geral": 10718,
+   "rank": 2
+  },
+  {
+   "codigo_ibge": "4107207",
+   "municipio": "Dois Vizinhos",
+   "total_licitacoes": 877,
+   "total_contratos": 8609,
+   "total_geral": 9486,
+   "rank": 3
+  },
+  {
+   "codigo_ibge": "4119905",
+   "municipio": "Ponta Grossa",
+   "total_licitacoes": 4361,
+   "total_contratos": 5007,
+   "total_geral": 9368,
+   "rank": 4
+  },
+  {
+   "codigo_ibge": "4113700",
+   "municipio": "Londrina",
+   "total_licitacoes": 5427,
+   "total_contratos": 3790,
+   "total_geral": 9217,
+   "rank": 5
+  },
+  {
+   "codigo_ibge": "4104808",
+   "municipio": "Cascavel",
+   "total_licitacoes": 6157,
+   "total_contratos": 2322,
+   "total_geral": 8479,
+   "rank": 6
+  },
+  {
+   "codigo_ibge": "4109401",
+   "municipio": "Guarapuava",
+   "total_licitacoes": 5504,
+   "total_contratos": 1711,
+   "total_geral": 7215,
+   "rank": 7
+  },
+  {
+   "codigo_ibge": "4102901",
+   "municipio": "Bituruna",
+   "total_licitacoes": 6520,
+   "total_contratos": 352,
+   "total_geral": 6872,
+   "rank": 8
+  },
+  {
+   "codigo_ibge": "4104303",
+   "municipio": "Campo Mourão",
+   "total_licitacoes": 4970,
+   "total_contratos": 1788,
+   "total_geral": 6758,
+   "rank": 9
+  },
+  {
+   "codigo_ibge": "4100103",
+   "municipio": "Abatiá",
+   "total_licitacoes": 6045,
+   "total_contratos": 332,
+   "total_geral": 6377,
+   "rank": 10
+  },
+  {
+   "codigo_ibge": "4122404",
+   "municipio": "Rolândia",
+   "total_licitacoes": 1181,
+   "total_contratos": 5047,
+   "total_geral": 6228,
+   "rank": 11
+  },
+  {
+   "codigo_ibge": "4108304",
+   "municipio": "Foz do Iguaçu",
+   "total_licitacoes": 3282,
+   "total_contratos": 2267,
+   "total_geral": 5549,
+   "rank": 12
+  },
+  {
+   "codigo_ibge": "4108205",
+   "municipio": "Formosa do Oeste",
+   "total_licitacoes": 412,
+   "total_contratos": 4786,
+   "total_geral": 5198,
+   "rank": 13
+  },
+  {
+   "codigo_ibge": "4111803",
+   "municipio": "Jacarezinho",
+   "total_licitacoes": 2506,
+   "total_contratos": 2264,
+   "total_geral": 4770,
+   "rank": 14
+  },
+  {
+   "codigo_ibge": "4128104",
+   "municipio": "Umuarama",
+   "total_licitacoes": 1962,
+   "total_contratos": 2665,
+   "total_geral": 4627,
+   "rank": 15
+  },
+  {
+   "codigo_ibge": "4101408",
+   "municipio": "Apucarana",
+   "total_licitacoes": 2381,
+   "total_contratos": 1752,
+   "total_geral": 4133,
+   "rank": 16
+  },
+  {
+   "codigo_ibge": "4126207",
+   "municipio": "Sapopema",
+   "total_licitacoes": 377,
+   "total_contratos": 3216,
+   "total_geral": 3593,
+   "rank": 17
+  },
+  {
+   "codigo_ibge": "4122107",
+   "municipio": "Rio Bom",
+   "total_licitacoes": 421,
+   "total_contratos": 3146,
+   "total_geral": 3567,
+   "rank": 18
+  },
+  {
+   "codigo_ibge": "4127700",
+   "municipio": "Toledo",
+   "total_licitacoes": 1346,
+   "total_contratos": 2067,
+   "total_geral": 3413,
+   "rank": 19
+  },
+  {
+   "codigo_ibge": "4108403",
+   "municipio": "Francisco Beltrão",
+   "total_licitacoes": 1912,
+   "total_contratos": 1368,
+   "total_geral": 3280,
+   "rank": 20
+  }
+ ],
+ "por_ano": [
+  {
+   "ano": 2024,
+   "licitacoes": 95687,
+   "contratos": 55669,
+   "municipios_com_registro": 392
+  },
+  {
+   "ano": 2025,
+   "licitacoes": 107351,
+   "contratos": 105639,
+   "municipios_com_registro": 395
+  },
+  {
+   "ano": 2026,
+   "licitacoes": 60413,
+   "contratos": 57683,
+   "municipios_com_registro": 394
+  }
+ ]
+}

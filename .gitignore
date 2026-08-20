@@ -1,0 +1,15 @@
+# CSVs brutos (nao compactados) -- so os .csv.gz vao pro repo, ver
+# scripts/exportar_*_csv.py no farol-engine. Os .csv puros ficam locais,
+# gerados sob demanda, nunca commitados (111MB do de licitacoes estoura o
+# limite de 100MB do GitHub sem Git LFS).
+data/contratos_parana_2024_2026.csv
+data/licitacoes_parana_2024_2026.csv
+
+# Lixo comum de SO / editor
+.DS_Store
+Thumbs.db
+*.bak
+*~
+
+# Pasta de staging temporaria (arquivos marcados pra remover manualmente)
+_to_delete/

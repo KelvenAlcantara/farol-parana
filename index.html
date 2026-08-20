@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Farol do Paraná - Transparência em compras públicas</title>
+<meta name="description" content="Painel público de licitações e contratos do Paraná: 263.364 licitações e 218.103 contratos, 397 de 399 municípios cobertos, medidos direto do PNCP - não estimados.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/farol-tokens.css">
+<script>
+  (function () {
+    var saved = localStorage.getItem('farol-theme');
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<style>
+  /* ---------- Landing-specific ---------- */
+  .hero {
+    height: 220vh;
+    position: relative;
+  }
+  .hero-pin {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    text-align: center;
+    padding: 0 24px;
+  }
+  .hero-pin::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 50% 30%, var(--gray-100) 0%, transparent 60%);
+    opacity: 0.6;
+    pointer-events: none;
+  }
+  .hero-eyebrow {
+    position: relative;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gray-500);
+    margin-bottom: 18px;
+  }
+  .hero-outline {
+    position: relative;
+    width: min(72vw, 620px);
+    height: auto;
+  }
+  .hero-title {
+    position: relative;
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: clamp(40px, 8vw, 84px);
+    letter-spacing: -0.03em;
+    line-height: 0.98;
+    margin: 26px 0 14px;
+  }
+  .hero-sub {
+    position: relative;
+    max-width: 620px;
+    font-size: 17.5px;
+    line-height: 1.6;
+    color: var(--gray-700);
+    margin: 0 auto;
+  }
+  .hero-scroll-hint {
+    position: absolute;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gray-500);
+    opacity: 0.8;
+  }
+  .hero-scroll-hint svg { animation: bob 1.8s ease-in-out infinite; }
+  @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(6px); } }
+
+  .lighthouse-signature { color: var(--ink); flex-shrink: 0; }
+
+  .mission-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 56px;
+    align-items: start;
+  }
+  @media (max-width: 780px) { .mission-grid { grid-template-columns: 1fr; gap: 32px; } }
+
+  .author-card {
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .author-photo-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: var(--gray-100);
+  }
+  .author-photo-wrap img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    /* foto é retrato (2:3) dentro de uma moldura paisagem (4:3): o recorte
+       vertical é grande, e o degradê de fade (78% pra baixo) soma em cima
+       desse recorte. Com 20% ficava sobrando bem pouco corpo abaixo do
+       rosto, então o fade batia bem em cima do pescoço/gola - parecia
+       cabeça cortada. 38% deixa gola e ombro inteiros antes do fade começar. */
+    object-position: 50% 38%;
+    filter: contrast(1.05) brightness(1.02);
+    -webkit-mask-image: linear-gradient(180deg, #000 78%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 78%, transparent 100%);
+    display: block;
+  }
+  /* retrato-autor.jpg agora é a foto colorida real (antes era um JPEG salvo
+     em escala de cinza) - o duotone que cobria a foto pra disfarçar a falta
+     de cor não é mais necessário e só desnaturava a pele/roupa. Removido. */
+  .author-body { padding: 22px 26px 26px; }
+  .author-name { font-family: var(--font-display); font-weight: 800; font-size: 19px; }
+  .author-role { font-size: 13px; color: var(--gray-500); margin-top: 3px; }
+  .author-quote { font-size: 15px; line-height: 1.6; color: var(--gray-700); margin: 14px 0 0; }
+  .author-link { font-size: 13.5px; font-weight: 600; margin-top: 14px; display: inline-block; text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
+  .author-socials { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
+  .author-handle { font-size: 13.5px; font-weight: 600; }
+  .author-social-icon { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 1px solid var(--border); border-radius: 50%; color: var(--ink); flex-shrink: 0; transition: background .15s ease, color .15s ease; }
+  .author-social-icon:hover { background: var(--ink); color: var(--bg); }
+
+  .motif-icon {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 10px;
+    filter: contrast(1.1) saturate(1.1);
+    border: 1px solid var(--accent);
+  }
+  .motif-icon img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .eyebrow-with-motif { display: flex; align-items: center; }
+
+  .araucaria-banner {
+    position: relative;
+    margin-top: 64px;
+    height: 56vh;
+    min-height: 380px;
+    overflow: hidden;
+  }
+  .araucaria-banner img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    filter: contrast(1.12) brightness(0.92);
+    display: block;
+  }
+  .araucaria-banner::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    /* araucaria-banner.jpg agora é a foto real (céu azul vivo, verdes fortes) -
+       o véu só entra pra valer na faixa de baixo, onde o .araucaria-scrim
+       também atua; os primeiros 55% ficam praticamente sem filtro pra foto
+       aparecer no tom dela mesma */
+    background: linear-gradient(180deg, transparent 0%, transparent 55%, oklch(0.16 0.035 152 / 0.30) 100%);
+  }
+  .araucaria-banner .grain { position: absolute; inset: 0; opacity: 0.5; mix-blend-mode: overlay; }
+  /* dedicated scrim behind the text block - guarantees contrast regardless of what's
+     in the photo at that spot (the ::after wash alone measured ~2.7:1 there, too low).
+     Mantido opaco o bastante pra contraste do texto branco; só a cor mudou de
+     preto neutro pra verde escuro, pra casar com o resto do acento da marca. */
+  .araucaria-scrim {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 62%;
+    background: linear-gradient(180deg, transparent 0%, oklch(0.17 0.035 152 / 0.55) 35%, oklch(0.13 0.03 152 / 0.93) 100%);
+  }
+  .araucaria-content {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 44px 40px 36px;
+    color: oklch(0.985 0.002 250);
+    z-index: 1;
+  }
+  .araucaria-content .eyebrow { color: oklch(0.985 0.002 250); opacity: 0.8; }
+  .araucaria-content h2 { font-size: 28px; font-weight: 800; max-width: 560px; margin: 10px 0 0; color: oklch(0.985 0.002 250); }
+
+  .method-teaser {
+    border: 1px solid var(--border);
+    padding: 40px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 24px;
+  }
+  @media (max-width: 900px) { .method-teaser { grid-template-columns: repeat(2, 1fr); } }
+  .method-rule .n { font-family: var(--font-display); font-weight: 900; font-size: 26px; color: var(--gray-500); }
+  .method-rule .t { font-weight: 700; font-size: 14px; margin-top: 4px; }
+
+  .roadmap-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 20px;
+  }
+  .roadmap-card { background: var(--bg); border: 1px solid var(--border); padding: 26px 24px; }
+  .roadmap-n { font-family: var(--font-display); font-weight: 900; font-size: 22px; color: var(--gray-500); margin-bottom: 10px; }
+  .roadmap-t { font-size: 15.5px; font-weight: 800; margin: 0 0 8px; }
+  .roadmap-d { font-size: 14px; line-height: 1.55; color: var(--gray-700); margin: 0; }
+
+  .cta-band {
+    border: 1px solid var(--border);
+    padding: 56px 40px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+  }
+
+  /* Seções da landing viram âncora de posicionamento pros motivos de
+     araucária decorativos espalhados pelo fundo - não muda layout, só
+     habilita os filhos position:absolute a ficarem contidos na seção. */
+  .section { position: relative; }
+
+  .araucaria-corner {
+    position: absolute;
+    color: var(--ink);
+    opacity: 0.14;
+    pointer-events: none;
+  }
+  /* Variante mais discreta para seções com texto por perto - a opacidade
+     do hero (0.14) funciona num fundo vazio, mas ao lado de parágrafo
+     fica forte demais. */
+  .araucaria-corner-soft {
+    position: absolute;
+    color: var(--ink);
+    opacity: 0.08;
+    pointer-events: none;
+  }
+
+  .author-name-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .author-flag {
+    width: 32px;
+    height: auto;
+    flex-shrink: 0;
+    display: block;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="brand" href="index.html" aria-label="Farol do Paraná - início">
+    <svg width="22" height="44" viewBox="0 0 60 120" fill="none">
+      <polygon points="18,108 42,108 38,98 22,98" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+      <polygon points="24,98 36,98 33,30 27,30" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+      <line x1="24.6" y1="90" x2="35.4" y2="90" stroke="currentColor" stroke-width="2"/>
+      <line x1="25.6" y1="76" x2="34.4" y2="76" stroke="currentColor" stroke-width="2"/>
+      <line x1="26.6" y1="62" x2="33.4" y2="62" stroke="currentColor" stroke-width="2"/>
+      <line x1="27.6" y1="48" x2="32.4" y2="48" stroke="currentColor" stroke-width="2"/>
+      <polygon points="27,30 33,30 38,26 22,26" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>
+      <rect x="25" y="14" width="10" height="12" stroke="currentColor" stroke-width="2.6"/>
+      <line x1="30" y1="14" x2="30" y2="26" stroke="currentColor" stroke-width="1.8"/>
+      <path d="M24,14 Q30,6 36,14 Z" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>
+      <line x1="30" y1="6" x2="30" y2="2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="30" cy="1.3" r="1.7" fill="currentColor"/>
+    </svg>
+    <span>
+      <span class="brand-name" style="display:block;">Farol do Paraná</span>
+      <span class="brand-sub">Transparência em compras públicas · PR</span>
+    </span>
+  </a>
+
+  <nav class="nav-links" aria-label="Navegação principal">
+    <a href="painel.html">Painel</a>
+    <a href="licitacoes.html">Licitações</a>
+    <a href="contratos.html">Contratos</a>
+    <a href="metodologia.html">Metodologia</a>
+    <a href="sobre.html">Sobre</a>
+  </nav>
+
+  <div class="header-right">
+    <button class="theme-toggle" id="theme-toggle" aria-label="Alternar modo claro/escuro" aria-pressed="false">
+      <span class="knob"></span>
+    </button>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Abrir menu de navegação" aria-expanded="false" aria-controls="nav-mobile-panel">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</header>
+
+<nav class="nav-mobile-panel" id="nav-mobile-panel" aria-label="Navegação (mobile)">
+  <a href="painel.html">Painel</a>
+  <a href="licitacoes.html">Licitações</a>
+  <a href="contratos.html">Contratos</a>
+  <a href="metodologia.html">Metodologia</a>
+  <a href="sobre.html">Sobre</a>
+</nav>
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="hero">
+  <div class="hero-pin">
+    <svg class="araucaria-corner" style="top:8%;left:6%;transform:rotate(-8deg);" width="40" height="40" viewBox="0 0 24 24" fill="none"><line x1="12" y1="23" x2="12" y2="9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12,9 Q7.5,9.8 4.5,8.3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,8.3 Q8.3,6.8 6,5.3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,7.5 Q9.8,5.3 8.3,3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M12,9 Q16.5,9.8 19.5,8.3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,8.3 Q15.8,6.8 18,5.3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,7.5 Q14.3,5.3 15.8,3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="4.5" cy="8.3" r="1.3" fill="currentColor"/><circle cx="6" cy="5.3" r="1.2" fill="currentColor"/><circle cx="8.3" cy="3" r="1" fill="currentColor"/><circle cx="19.5" cy="8.3" r="1.3" fill="currentColor"/><circle cx="18" cy="5.3" r="1.2" fill="currentColor"/><circle cx="15.8" cy="3" r="1" fill="currentColor"/><circle cx="12" cy="6.2" r="0.9" fill="currentColor"/></svg>
+    <svg class="araucaria-corner" style="bottom:14%;right:8%;transform:rotate(6deg);" width="52" height="52" viewBox="0 0 24 24" fill="none"><line x1="12" y1="23" x2="12" y2="9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12,9 Q7.5,9.8 4.5,8.3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,8.3 Q8.3,6.8 6,5.3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,7.5 Q9.8,5.3 8.3,3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M12,9 Q16.5,9.8 19.5,8.3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,8.3 Q15.8,6.8 18,5.3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,7.5 Q14.3,5.3 15.8,3" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="4.5" cy="8.3" r="1.3" fill="currentColor"/><circle cx="6" cy="5.3" r="1.2" fill="currentColor"/><circle cx="8.3" cy="3" r="1" fill="currentColor"/><circle cx="19.5" cy="8.3" r="1.3" fill="currentColor"/><circle cx="18" cy="5.3" r="1.2" fill="currentColor"/><circle cx="15.8" cy="3" r="1" fill="currentColor"/><circle cx="12" cy="6.2" r="0.9" fill="currentColor"/></svg>
+    <svg class="araucaria-corner" style="top:20%;right:14%;transform:rotate(10deg) scale(-1,1);" width="30" height="30" viewBox="0 0 24 24" fill="none"><line x1="12" y1="23" x2="12" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12,16 Q7,17 4,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,16 Q17,17 20,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,8 Q9,9 7,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M12,8 Q15,9 17,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="4" cy="15" r="1.4" fill="currentColor"/><circle cx="20" cy="15" r="1.4" fill="currentColor"/><circle cx="12" cy="15.5" r="1" fill="currentColor"/><circle cx="7" cy="7" r="1.2" fill="currentColor"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/><circle cx="12" cy="6.3" r="0.9" fill="currentColor"/></svg>
+    <svg class="araucaria-corner" style="bottom:9%;left:12%;transform:rotate(-12deg);" width="24" height="24" viewBox="0 0 24 24" fill="none"><line x1="12" y1="23" x2="12" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12,16 Q7,17 4,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,16 Q17,17 20,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,8 Q9,9 7,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M12,8 Q15,9 17,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="4" cy="15" r="1.4" fill="currentColor"/><circle cx="20" cy="15" r="1.4" fill="currentColor"/><circle cx="12" cy="15.5" r="1" fill="currentColor"/><circle cx="7" cy="7" r="1.2" fill="currentColor"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/><circle cx="12" cy="6.3" r="0.9" fill="currentColor"/></svg>
+
+    <div class="hero-eyebrow">Compras governamentais do Paraná</div>
+
+    <svg class="hero-outline" id="pr-outline" viewBox="0 0 240 169" fill="none" aria-hidden="true">
+      <defs>
+        <clipPath id="prFillClip">
+          <rect id="pr-fill-rect" x="0" y="169" width="240" height="0"/>
+        </clipPath>
+        <clipPath id="prShapeClip">
+          <use href="#pr-path" xlink:href="#pr-path"/>
+        </clipPath>
+      </defs>
+      <path id="pr-path" d="M90.9,0.4 L89.8,4.9 L87.5,6.4 L86.4,4.1 L82.3,4.9 L79.2,3.8 L77,4.9 L74.4,2.3 L70.2,4.5 L60.1,2.3 L56,5.6 L55.2,4.5 L51.8,8.6 L48.5,9.4 L39.1,15 L36.8,17.7 L36.1,24.4 L32.3,32.7 L30.8,34.6 L22.9,38.7 L19.2,57.5 L10.1,65 L13.1,74.7 L10.5,78.9 L10.9,86.4 L8.3,91.3 L6,100.7 L7.1,105.9 L0,117.9 L1.1,123.2 L4.5,124.3 L6.8,127.3 L8.6,123.6 L9.8,123.9 L11.3,122.1 L13.5,123.6 L14.3,122.1 L16.2,122.8 L14.6,121.7 L18.8,119.4 L18.8,124.3 L19.9,122.1 L21.8,122.1 L24,125.4 L24.4,124.3 L26.3,124.7 L28.5,127.3 L27.4,128.5 L29.3,131.8 L28.2,133.3 L29.3,136 L28.5,138.6 L32.7,142 L32.3,144.6 L34.6,146.5 L36.1,150.2 L37.6,149.9 L41.3,151.7 L45.1,149.5 L48.5,149.9 L50.7,152.5 L56,155.5 L59.3,153.6 L68.7,153.6 L73.2,156.2 L76.6,155.9 L78.5,157.4 L87.1,158.5 L88.6,157.7 L91.6,158.9 L92,160.4 L95,162.3 L99.9,163.8 L105.2,162.6 L113.8,163.4 L117.2,168.3 L117.9,166 L121.3,166 L123.6,163.8 L121.7,160 L122.4,158.5 L120.9,157.4 L122.8,152.9 L128.1,150.6 L128.8,148.7 L132.2,149.1 L134.1,151 L134.5,149.1 L135.6,151.4 L136.7,149.5 L137.8,150.6 L139.3,148.7 L141.6,149.9 L141.6,148 L144.6,145 L144.6,143.1 L149.1,140.8 L151,140.5 L153.6,142 L155.9,145 L156.2,143.1 L159.2,140.8 L161.5,142.7 L161.9,140.8 L163,140.8 L163,142 L164.5,142 L165.3,140.5 L167.9,141.2 L169,140.1 L169.4,142 L170.1,140.5 L172.8,140.8 L178.4,146.5 L184.4,149.1 L186.3,148.7 L188.2,146.1 L190.8,146.1 L193.8,144.2 L198.3,139.7 L204.3,140.5 L206.6,139 L219.3,139 L220.5,134.1 L221.6,133.7 L225,125.8 L227.6,123.2 L230.2,122.4 L230.2,119.4 L233.6,117.9 L240,108.5 L237,110 L234,107.4 L235.1,105.5 L232.1,99.2 L229.5,102.2 L226.1,99.2 L222,104 L220.5,102.9 L219.3,99.5 L221.2,94.6 L220.5,92.8 L222.7,89.4 L219.3,86.8 L217.1,88.3 L216.3,86.8 L213,87.5 L211.1,86 L206.2,87.1 L204.3,85.3 L202.8,87.1 L197.9,86.8 L197.2,87.9 L193.4,86.4 L193.1,81.9 L195.7,78.1 L195.7,75.1 L197.2,73.2 L194.2,71.7 L191.5,68 L192.3,65.4 L188.9,63.1 L186.7,60.5 L185.9,56.7 L182.5,54.1 L184,52.2 L184.4,47.3 L182.2,45.1 L181.8,39.8 L183.7,36.8 L182.2,34.9 L182.9,34.2 L181.4,33.4 L180.7,27.4 L177.7,24.8 L178,23.7 L171.6,21.8 L171.6,19.5 L169,17.7 L168.6,15.4 L168.3,16.5 L166.4,15.8 L161.9,17.7 L156.2,17.7 L154.7,15.8 L152.9,17.3 L149.5,17.3 L148.7,16.2 L146.1,16.5 L143.8,15.4 L141.2,18 L138.6,16.9 L139.3,15.4 L136,11.3 L126.2,9.8 L121.7,6 L115.7,5.6 L111.5,7.5 L108.5,5.6 L105.9,6.4 L104.4,4.1 L100.7,4.9 L97.7,2.3 L91.3,0 Z" fill="none" stroke="var(--ink)" stroke-width="3.5" stroke-linejoin="round"/>
+      <g clip-path="url(#prShapeClip)">
+        <g clip-path="url(#prFillClip)">
+          <path id="pr-fill-solid" d="M90.9,0.4 L89.8,4.9 L87.5,6.4 L86.4,4.1 L82.3,4.9 L79.2,3.8 L77,4.9 L74.4,2.3 L70.2,4.5 L60.1,2.3 L56,5.6 L55.2,4.5 L51.8,8.6 L48.5,9.4 L39.1,15 L36.8,17.7 L36.1,24.4 L32.3,32.7 L30.8,34.6 L22.9,38.7 L19.2,57.5 L10.1,65 L13.1,74.7 L10.5,78.9 L10.9,86.4 L8.3,91.3 L6,100.7 L7.1,105.9 L0,117.9 L1.1,123.2 L4.5,124.3 L6.8,127.3 L8.6,123.6 L9.8,123.9 L11.3,122.1 L13.5,123.6 L14.3,122.1 L16.2,122.8 L14.6,121.7 L18.8,119.4 L18.8,124.3 L19.9,122.1 L21.8,122.1 L24,125.4 L24.4,124.3 L26.3,124.7 L28.5,127.3 L27.4,128.5 L29.3,131.8 L28.2,133.3 L29.3,136 L28.5,138.6 L32.7,142 L32.3,144.6 L34.6,146.5 L36.1,150.2 L37.6,149.9 L41.3,151.7 L45.1,149.5 L48.5,149.9 L50.7,152.5 L56,155.5 L59.3,153.6 L68.7,153.6 L73.2,156.2 L76.6,155.9 L78.5,157.4 L87.1,158.5 L88.6,157.7 L91.6,158.9 L92,160.4 L95,162.3 L99.9,163.8 L105.2,162.6 L113.8,163.4 L117.2,168.3 L117.9,166 L121.3,166 L123.6,163.8 L121.7,160 L122.4,158.5 L120.9,157.4 L122.8,152.9 L128.1,150.6 L128.8,148.7 L132.2,149.1 L134.1,151 L134.5,149.1 L135.6,151.4 L136.7,149.5 L137.8,150.6 L139.3,148.7 L141.6,149.9 L141.6,148 L144.6,145 L144.6,143.1 L149.1,140.8 L151,140.5 L153.6,142 L155.9,145 L156.2,143.1 L159.2,140.8 L161.5,142.7 L161.9,140.8 L163,140.8 L163,142 L164.5,142 L165.3,140.5 L167.9,141.2 L169,140.1 L169.4,142 L170.1,140.5 L172.8,140.8 L178.4,146.5 L184.4,149.1 L186.3,148.7 L188.2,146.1 L190.8,146.1 L193.8,144.2 L198.3,139.7 L204.3,140.5 L206.6,139 L219.3,139 L220.5,134.1 L221.6,133.7 L225,125.8 L227.6,123.2 L230.2,122.4 L230.2,119.4 L233.6,117.9 L240,108.5 L237,110 L234,107.4 L235.1,105.5 L232.1,99.2 L229.5,102.2 L226.1,99.2 L222,104 L220.5,102.9 L219.3,99.5 L221.2,94.6 L220.5,92.8 L222.7,89.4 L219.3,86.8 L217.1,88.3 L216.3,86.8 L213,87.5 L211.1,86 L206.2,87.1 L204.3,85.3 L202.8,87.1 L197.9,86.8 L197.2,87.9 L193.4,86.4 L193.1,81.9 L195.7,78.1 L195.7,75.1 L197.2,73.2 L194.2,71.7 L191.5,68 L192.3,65.4 L188.9,63.1 L186.7,60.5 L185.9,56.7 L182.5,54.1 L184,52.2 L184.4,47.3 L182.2,45.1 L181.8,39.8 L183.7,36.8 L182.2,34.9 L182.9,34.2 L181.4,33.4 L180.7,27.4 L177.7,24.8 L178,23.7 L171.6,21.8 L171.6,19.5 L169,17.7 L168.6,15.4 L168.3,16.5 L166.4,15.8 L161.9,17.7 L156.2,17.7 L154.7,15.8 L152.9,17.3 L149.5,17.3 L148.7,16.2 L146.1,16.5 L143.8,15.4 L141.2,18 L138.6,16.9 L139.3,15.4 L136,11.3 L126.2,9.8 L121.7,6 L115.7,5.6 L111.5,7.5 L108.5,5.6 L105.9,6.4 L104.4,4.1 L100.7,4.9 L97.7,2.3 L91.3,0 Z" fill="var(--accent)" style="display:none;"/>
+          <g id="pr-matrix" font-family="'Courier New', monospace" font-weight="700"></g>
+        </g>
+      </g>
+    </svg>
+
+    <h1 class="hero-title">Farol do Paraná</h1>
+    <p class="hero-sub">Licitações e contratos públicos do estado, medidos direto do PNCP - não estimados. Cada afirmação carrega a fonte de onde veio.</p>
+
+    <div class="hero-scroll-hint">
+      Role para ver os números
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M8 10l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+  </div>
+</section>
+
+<!-- ============ KPIs ============ -->
+<section class="section" id="numeros">
+  <div class="wrap">
+    <div class="eyebrow">Prova, não promessa</div>
+    <h2 style="font-size:32px;font-weight:800;margin:8px 0 32px;max-width:560px;">Os números de hoje, direto da fonte</h2>
+  </div>
+  <div class="wrap">
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <svg class="kpi-araucaria" width="22" height="22" viewBox="0 0 24 24" fill="none"><line x1="12" y1="23" x2="12" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12,16 Q7,17 4,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,16 Q17,17 20,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,8 Q9,9 7,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M12,8 Q15,9 17,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="4" cy="15" r="1.4" fill="currentColor"/><circle cx="20" cy="15" r="1.4" fill="currentColor"/><circle cx="12" cy="15.5" r="1" fill="currentColor"/><circle cx="7" cy="7" r="1.2" fill="currentColor"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/><circle cx="12" cy="6.3" r="0.9" fill="currentColor"/></svg>
+        <div class="kpi-label">Licitações</div>
+        <div class="kpi-value tabular">263.364</div>
+        <div class="kpi-sub">2024–2026 · PNCP</div>
+      </div>
+      <div class="kpi-card">
+        <svg class="kpi-araucaria" width="22" height="22" viewBox="0 0 24 24" fill="none"><line x1="12" y1="23" x2="12" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12,16 Q7,17 4,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,16 Q17,17 20,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,8 Q9,9 7,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M12,8 Q15,9 17,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="4" cy="15" r="1.4" fill="currentColor"/><circle cx="20" cy="15" r="1.4" fill="currentColor"/><circle cx="12" cy="15.5" r="1" fill="currentColor"/><circle cx="7" cy="7" r="1.2" fill="currentColor"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/><circle cx="12" cy="6.3" r="0.9" fill="currentColor"/></svg>
+        <div class="kpi-label">Contratos</div>
+        <div class="kpi-value tabular">218.103</div>
+        <div class="kpi-sub">2024–2026 · PNCP</div>
+      </div>
+      <div class="kpi-card">
+        <svg class="kpi-araucaria" width="22" height="22" viewBox="0 0 24 24" fill="none"><line x1="12" y1="23" x2="12" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12,16 Q7,17 4,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,16 Q17,17 20,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,8 Q9,9 7,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M12,8 Q15,9 17,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="4" cy="15" r="1.4" fill="currentColor"/><circle cx="20" cy="15" r="1.4" fill="currentColor"/><circle cx="12" cy="15.5" r="1" fill="currentColor"/><circle cx="7" cy="7" r="1.2" fill="currentColor"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/><circle cx="12" cy="6.3" r="0.9" fill="currentColor"/></svg>
+        <div class="kpi-label">Municípios cobertos</div>
+        <div class="kpi-value tabular">397<span style="color:var(--gray-700);font-size:0.5em;"> / 399</span></div>
+        <div class="kpi-sub">99,5% do estado</div>
+      </div>
+      <div class="kpi-card">
+        <svg class="kpi-araucaria" width="22" height="22" viewBox="0 0 24 24" fill="none"><line x1="12" y1="23" x2="12" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12,16 Q7,17 4,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,16 Q17,17 20,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,8 Q9,9 7,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M12,8 Q15,9 17,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="4" cy="15" r="1.4" fill="currentColor"/><circle cx="20" cy="15" r="1.4" fill="currentColor"/><circle cx="12" cy="15.5" r="1" fill="currentColor"/><circle cx="7" cy="7" r="1.2" fill="currentColor"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/><circle cx="12" cy="6.3" r="0.9" fill="currentColor"/></svg>
+        <div class="kpi-label">Período</div>
+        <div class="kpi-value tabular" style="font-size:32px;">2024–2026</div>
+        <div class="kpi-sub">2026 ainda parcial</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap" style="margin-top:56px;">
+  <div class="cobble"></div>
+</div>
+
+<!-- ============ ARAUCÁRIA - banner full-bleed ============ -->
+<div class="araucaria-banner">
+  <img src="assets/img/araucaria-banner.jpg" alt="Araucária, símbolo do Paraná">
+  <svg class="grain" width="100%" height="100%"><filter id="araucariaNoise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#araucariaNoise)" opacity="0.35"/></svg>
+  <div class="araucaria-scrim"></div>
+  <div class="araucaria-content wrap">
+    <div class="eyebrow">Símbolo do Paraná</div>
+    <h2>A araucária é a paisagem mais clássica e mais próxima de todo paranaense - por isso ela é o divisor de cada seção deste site.</h2>
+  </div>
+</div>
+
+<!-- ============ MISSÃO + AUTOR ============ -->
+<section class="section" id="missao">
+  <svg class="araucaria-corner-soft" style="top:26px;right:2.5%;transform:rotate(8deg);" width="34" height="34" viewBox="0 0 24 24" fill="none"><line x1="12" y1="23" x2="12" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12,16 Q7,17 4,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,16 Q17,17 20,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,8 Q9,9 7,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M12,8 Q15,9 17,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="4" cy="15" r="1.4" fill="currentColor"/><circle cx="20" cy="15" r="1.4" fill="currentColor"/><circle cx="12" cy="15.5" r="1" fill="currentColor"/><circle cx="7" cy="7" r="1.2" fill="currentColor"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/><circle cx="12" cy="6.3" r="0.9" fill="currentColor"/></svg>
+  <svg class="araucaria-corner-soft" style="bottom:10px;left:1.5%;transform:rotate(-12deg) scale(-1,1);" width="22" height="22" viewBox="0 0 24 24" fill="none"><line x1="12" y1="23" x2="12" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12,16 Q7,17 4,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,16 Q17,17 20,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,8 Q9,9 7,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M12,8 Q15,9 17,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="4" cy="15" r="1.4" fill="currentColor"/><circle cx="20" cy="15" r="1.4" fill="currentColor"/><circle cx="12" cy="15.5" r="1" fill="currentColor"/><circle cx="7" cy="7" r="1.2" fill="currentColor"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/><circle cx="12" cy="6.3" r="0.9" fill="currentColor"/></svg>
+  <div class="wrap">
+    <div class="mission-grid">
+      <div>
+        <div class="eyebrow eyebrow-with-motif"><span class="motif-icon"><img src="assets/img/araucaria-icone.jpg" alt=""></span>Missão</div>
+        <h2 style="font-size:30px;font-weight:800;margin:8px 0 18px;">Compra pública é dinheiro de todo mundo</h2>
+        <p style="font-size:17px;line-height:1.65;color:var(--gray-700);margin:0 0 14px;">O Farol do Paraná organiza licitações e contratos publicados pelo PNCP em um painel público, gratuito e sem cadastro - para qualquer cidadão, jornalista ou fiscal entender onde o dinheiro do estado está indo.</p>
+        <p style="font-size:17px;line-height:1.65;color:var(--gray-700);margin:0;">Nada aqui é estimado. Todo número carrega a fonte que o gerou, e nenhuma seção mostra dado que ainda não existe de verdade.</p>
+      </div>
+      <div class="author-card">
+        <div class="author-photo-wrap">
+          <img src="assets/img/retrato-autor.jpg" alt="Kelven Alcantara, autor do Farol do Paraná">
+        </div>
+        <div class="author-body">
+          <div class="author-name-row">
+            <div class="author-name">Kelven Alcantara</div>
+            <img class="author-flag" src="assets/img/Bandeira_do_Paraná.svg.webp" alt="Bandeira do Paraná" title="Paraná">
+          </div>
+          <div class="author-role">Autor e mantenedor do projeto</div>
+          <p class="author-quote">Construí o Farol do Paraná sozinho, do zero, porque fiscalização pública não deveria depender de pedido de acesso à informação.</p>
+          <p class="author-quote">Antes disso, passei anos como programador e trabalhando com treinamento de modelos de IA. Hoje sou candidato a Deputado Estadual do Paraná pela Missão - quero levar essa mesma capacidade técnica para dentro da máquina pública, para melhorar a transparência e a economia do estado.</p>
+          <div class="author-socials">
+            <span class="author-handle">@kelvenalca.pr</span>
+            <a class="author-social-icon" href="https://www.instagram.com/kelvenalca.pr/" target="_blank" rel="noopener" aria-label="Instagram de Kelven Alcantara (@kelvenalca.pr)">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.8"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor"/></svg>
+            </a>
+            <a class="author-social-icon" href="https://www.tiktok.com/@kelvenalca.pr" target="_blank" rel="noopener" aria-label="TikTok de Kelven Alcantara (@kelvenalca.pr)">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M16.5 3c.4 2.2 1.9 3.9 4 4.3v3c-1.5 0-2.9-.5-4-1.3v6.4c0 3.4-2.7 6.1-6.1 6.1S4.3 18.8 4.3 15.4c0-3.2 2.5-5.8 5.6-6.1v3.1c-1.4.3-2.5 1.6-2.5 3 0 1.7 1.4 3.1 3.1 3.1s3.1-1.4 3.1-3.1V3h2.9z" fill="currentColor"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ METODOLOGIA TEASER ============ -->
+<section class="section" id="metodologia-teaser">
+  <svg class="araucaria-corner-soft" style="top:20px;left:2%;transform:rotate(-7deg);" width="26" height="26" viewBox="0 0 24 24" fill="none"><line x1="12" y1="23" x2="12" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12,16 Q7,17 4,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,16 Q17,17 20,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,8 Q9,9 7,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M12,8 Q15,9 17,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="4" cy="15" r="1.4" fill="currentColor"/><circle cx="20" cy="15" r="1.4" fill="currentColor"/><circle cx="12" cy="15.5" r="1" fill="currentColor"/><circle cx="7" cy="7" r="1.2" fill="currentColor"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/><circle cx="12" cy="6.3" r="0.9" fill="currentColor"/></svg>
+  <svg class="araucaria-corner-soft" style="bottom:8px;right:2.5%;transform:rotate(10deg);" width="30" height="30" viewBox="0 0 24 24" fill="none"><line x1="12" y1="23" x2="12" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12,16 Q7,17 4,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,16 Q17,17 20,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,8 Q9,9 7,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M12,8 Q15,9 17,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="4" cy="15" r="1.4" fill="currentColor"/><circle cx="20" cy="15" r="1.4" fill="currentColor"/><circle cx="12" cy="15.5" r="1" fill="currentColor"/><circle cx="7" cy="7" r="1.2" fill="currentColor"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/><circle cx="12" cy="6.3" r="0.9" fill="currentColor"/></svg>
+  <div class="wrap">
+    <div class="eyebrow eyebrow-with-motif"><span class="motif-icon"><img src="assets/img/araucaria-icone.jpg" alt=""></span>Como isso é medido, não estimado</div>
+    <h2 style="font-size:30px;font-weight:800;margin:8px 0 32px;max-width:600px;">Cinco filtros de qualidade, antes de qualquer número virar público</h2>
+    <div class="method-teaser">
+      <div class="method-rule"><div class="n">01</div><div class="t">Conferência com a fonte</div></div>
+      <div class="method-rule"><div class="n">02</div><div class="t">Retomada sem duplicar</div></div>
+      <div class="method-rule"><div class="n">03</div><div class="t">Teto de credenciamento filtrado</div></div>
+      <div class="method-rule"><div class="n">04</div><div class="t">Valores atípicos sinalizados</div></div>
+      <div class="method-rule"><div class="n">05</div><div class="t">Estimado ≠ homologado</div></div>
+    </div>
+    <p style="font-size:15px;color:var(--gray-500);margin-top:18px;">Nenhum número aqui é o dado bruto direto da fonte - cada um passa por esses filtros antes de aparecer no site. <a href="metodologia.html" style="text-decoration:underline;text-underline-offset:3px;font-weight:600;color:var(--ink);">Ver a metodologia completa →</a></p>
+  </div>
+</section>
+
+<!-- ============ FUTURO ============ -->
+<section class="section" id="futuro">
+  <svg class="araucaria-corner-soft" style="top:22px;right:2%;transform:rotate(6deg);" width="28" height="28" viewBox="0 0 24 24" fill="none"><line x1="12" y1="23" x2="12" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12,16 Q7,17 4,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,16 Q17,17 20,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,8 Q9,9 7,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M12,8 Q15,9 17,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="4" cy="15" r="1.4" fill="currentColor"/><circle cx="20" cy="15" r="1.4" fill="currentColor"/><circle cx="12" cy="15.5" r="1" fill="currentColor"/><circle cx="7" cy="7" r="1.2" fill="currentColor"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/><circle cx="12" cy="6.3" r="0.9" fill="currentColor"/></svg>
+  <svg class="araucaria-corner-soft" style="bottom:14px;left:2.5%;transform:rotate(-9deg) scale(-1,1);" width="24" height="24" viewBox="0 0 24 24" fill="none"><line x1="12" y1="23" x2="12" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12,16 Q7,17 4,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,16 Q17,17 20,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,8 Q9,9 7,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M12,8 Q15,9 17,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="4" cy="15" r="1.4" fill="currentColor"/><circle cx="20" cy="15" r="1.4" fill="currentColor"/><circle cx="12" cy="15.5" r="1" fill="currentColor"/><circle cx="7" cy="7" r="1.2" fill="currentColor"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/><circle cx="12" cy="6.3" r="0.9" fill="currentColor"/></svg>
+  <div class="wrap">
+    <div class="eyebrow eyebrow-with-motif"><span class="motif-icon"><img src="assets/img/araucaria-icone.jpg" alt=""></span>Para onde o Farol vai</div>
+    <h2 style="font-size:30px;font-weight:800;margin:8px 0 32px;max-width:600px;">O que vem depois dos números de hoje</h2>
+    <div class="roadmap-grid">
+      <div class="roadmap-card">
+        <div class="roadmap-n">01</div>
+        <h3 class="roadmap-t">Corrigir a infraestrutura de dados</h3>
+        <p class="roadmap-d">Mapear onde o PNCP publica errado ou incompleto e cobrar do governo do estado o processo correto de correção.</p>
+      </div>
+      <div class="roadmap-card">
+        <div class="roadmap-n">02</div>
+        <h3 class="roadmap-t">Coletar contratos em PDF</h3>
+        <p class="roadmap-d">Extrair e analisar o inteiro teor dos contratos publicados só em PDF - hoje fora do alcance dos dados estruturados.</p>
+      </div>
+      <div class="roadmap-card">
+        <div class="roadmap-n">03</div>
+        <h3 class="roadmap-t">Classificação estatística de mercado</h3>
+        <p class="roadmap-d">Comparar o valor pago em cada contrato contra o preço real praticado no mercado - não só entre órgãos públicos.</p>
+      </div>
+      <div class="roadmap-card">
+        <div class="roadmap-n">04</div>
+        <h3 class="roadmap-t">Newsletter semanal</h3>
+        <p class="roadmap-d">Um resumo semanal do andamento das investigações sobre os dados do Paraná, direto para quem quiser acompanhar.</p>
+      </div>
+      <div class="roadmap-card">
+        <div class="roadmap-n">05</div>
+        <h3 class="roadmap-t">Contato com os órgãos</h3>
+        <p class="roadmap-d">Tentar contato direto com o órgão responsável por cada suspeita levantada, antes de qualquer publicação.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CTA ============ -->
+<section class="section" id="cta" style="padding-bottom:0;">
+  <svg class="araucaria-corner-soft" style="top:18px;left:2%;transform:rotate(-8deg);" width="24" height="24" viewBox="0 0 24 24" fill="none"><line x1="12" y1="23" x2="12" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12,16 Q7,17 4,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,16 Q17,17 20,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,8 Q9,9 7,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M12,8 Q15,9 17,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="4" cy="15" r="1.4" fill="currentColor"/><circle cx="20" cy="15" r="1.4" fill="currentColor"/><circle cx="12" cy="15.5" r="1" fill="currentColor"/><circle cx="7" cy="7" r="1.2" fill="currentColor"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/><circle cx="12" cy="6.3" r="0.9" fill="currentColor"/></svg>
+  <svg class="araucaria-corner-soft" style="bottom:10px;right:2%;transform:rotate(11deg) scale(-1,1);" width="30" height="30" viewBox="0 0 24 24" fill="none"><line x1="12" y1="23" x2="12" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12,16 Q7,17 4,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,16 Q17,17 20,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,8 Q9,9 7,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M12,8 Q15,9 17,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="4" cy="15" r="1.4" fill="currentColor"/><circle cx="20" cy="15" r="1.4" fill="currentColor"/><circle cx="12" cy="15.5" r="1" fill="currentColor"/><circle cx="7" cy="7" r="1.2" fill="currentColor"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/><circle cx="12" cy="6.3" r="0.9" fill="currentColor"/></svg>
+  <div class="wrap">
+    <div class="cta-band">
+      <h2 style="font-size:28px;font-weight:800;max-width:480px;">Explore os dados de 397 municípios do Paraná</h2>
+      <a class="btn btn-primary" href="painel.html">
+        Ir para o painel
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Farol do Paraná · dados públicos do PNCP · atualizado a partir da coleta estadual 2024–2026</p>
+    <p>Um projeto de Kelven Alcantara</p>
+  </div>
+</footer>
+
+<script>
+  // ---- Theme toggle ----
+  var toggle = document.getElementById('theme-toggle');
+  function currentTheme() {
+    var attr = document.documentElement.getAttribute('data-theme');
+    if (attr) return attr;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function applyTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('farol-theme', t);
+    toggle.setAttribute('aria-pressed', t === 'dark');
+  }
+  toggle.setAttribute('aria-pressed', currentTheme() === 'dark');
+  toggle.addEventListener('click', function () {
+    applyTheme(currentTheme() === 'dark' ? 'light' : 'dark');
+  });
+
+  // ---- Mobile nav toggle (o botão existia no CSS mas não abria nada) ----
+  var navToggle = document.getElementById('nav-toggle');
+  var navPanel = document.getElementById('nav-mobile-panel');
+  function closeNavPanel() {
+    navPanel.classList.remove('open');
+    navToggle.setAttribute('aria-expanded', 'false');
+  }
+  navToggle.addEventListener('click', function () {
+    var open = navPanel.classList.toggle('open');
+    navToggle.setAttribute('aria-expanded', open);
+  });
+  navPanel.querySelectorAll('a').forEach(function (a) {
+    a.addEventListener('click', closeNavPanel);
+  });
+  window.addEventListener('resize', function () {
+    if (window.innerWidth > 860) closeNavPanel();
+  });
+
+  // ---- Hero scroll-fill of the PR outline ----
+  var hero = document.getElementById('hero');
+  var fillRect = document.getElementById('pr-fill-rect');
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function updateFill() {
+    if (reduceMotion) {
+      fillRect.setAttribute('y', 0);
+      fillRect.setAttribute('height', 169);
+      return;
+    }
+    var rect = hero.getBoundingClientRect();
+    var total = hero.offsetHeight - window.innerHeight;
+    var progress = total > 0 ? (-rect.top) / total : 0;
+    progress = Math.max(0, Math.min(1, progress));
+    var h = 169 * progress;
+    fillRect.setAttribute('y', 169 - h);
+    fillRect.setAttribute('height', h + 1);
+  }
+
+  updateFill();
+  window.addEventListener('scroll', updateFill, { passive: true });
+  window.addEventListener('resize', updateFill);
+
+  // ---- Preenchimento "chuva de dígitos" com os números reais do painel,
+  // em vez de uma barra sólida - a versão sólida (pr-fill-solid) fica
+  // como fallback para prefers-reduced-motion. ----
+  (function () {
+    var matrixGroup = document.getElementById('pr-matrix');
+    var fillSolid = document.getElementById('pr-fill-solid');
+    if (reduceMotion) {
+      fillSolid.style.display = '';
+      return;
+    }
+
+    var DATA_CHARS = '263364218103397399202420252026';
+    var cols = 17, rows = 12, trail = 5;
+    var cellW = 240 / cols, cellH = 169 / rows;
+    var cells = [];
+    var svgNS = 'http://www.w3.org/2000/svg';
+
+    function randChar() {
+      return DATA_CHARS[Math.floor(Math.random() * DATA_CHARS.length)];
+    }
+
+    for (var c = 0; c < cols; c++) {
+      var colCells = [];
+      for (var r = 0; r < rows; r++) {
+        var el = document.createElementNS(svgNS, 'text');
+        el.setAttribute('x', String((c + 0.5) * cellW));
+        el.setAttribute('y', String((r + 0.78) * cellH));
+        el.setAttribute('text-anchor', 'middle');
+        el.setAttribute('font-size', String(Math.min(cellW, cellH) * 0.85));
+        el.setAttribute('fill', 'var(--accent)');
+        el.setAttribute('opacity', '0.05');
+        el.textContent = randChar();
+        matrixGroup.appendChild(el);
+        colCells.push(el);
+      }
+      cells.push(colCells);
+    }
+
+    // heads começam espalhados acima/na grade - sobem (rising), não caem
+    var heads = [];
+    for (var c2 = 0; c2 < cols; c2++) {
+      heads.push(Math.floor(Math.random() * (rows + trail)) - trail);
+    }
+
+    function tickMatrix() {
+      for (var c3 = 0; c3 < cols; c3++) {
+        heads[c3] -= 1;
+        if (heads[c3] < -trail) heads[c3] = rows - 1;
+        for (var r3 = 0; r3 < rows; r3++) {
+          var dist = r3 - heads[c3];
+          var cell = cells[c3][r3];
+          if (dist >= 0 && dist <= trail) {
+            cell.setAttribute('opacity', dist === 0 ? '1' : String(Math.max(0.08, 1 - dist / trail)));
+            if (dist <= 1) cell.textContent = randChar();
+          } else {
+            cell.setAttribute('opacity', '0.05');
+          }
+        }
+      }
+    }
+
+    var matrixInterval = null;
+    function startMatrix() { if (!matrixInterval) matrixInterval = setInterval(tickMatrix, 110); }
+    function stopMatrix() { if (matrixInterval) { clearInterval(matrixInterval); matrixInterval = null; } }
+
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) startMatrix(); else stopMatrix();
+        });
+      }, { threshold: 0.05 });
+      io.observe(hero);
+    } else {
+      startMatrix();
+    }
+  })();
+</script>
+
+</body>
+</html>

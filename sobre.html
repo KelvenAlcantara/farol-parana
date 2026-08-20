@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sobre - Farol do Paraná</title>
+<meta name="description" content="Por que o Farol do Paraná existe: os princípios por trás do projeto, quem o mantém, e o que vem depois da fiscalização.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/farol-tokens.css">
+<script>
+  (function () {
+    var saved = localStorage.getItem('farol-theme');
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<style>
+  .page-head {
+    padding: 48px 0 40px;
+    border-bottom: 1px solid var(--border);
+  }
+  .page-head h1 {
+    font-size: clamp(30px, 4vw, 44px);
+    font-weight: 900;
+    margin: 8px 0 12px;
+    letter-spacing: -0.02em;
+  }
+  .page-head p {
+    max-width: 680px;
+    font-size: 16.5px;
+    line-height: 1.6;
+    color: var(--gray-700);
+    margin: 0;
+  }
+
+  .prose { max-width: 720px; }
+  .prose p { font-size: 16px; line-height: 1.7; color: var(--gray-700); margin: 0 0 16px; }
+  .prose p:last-child { margin-bottom: 0; }
+  .prose strong { color: var(--ink); }
+
+  .section-num {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 15px;
+    color: var(--gray-500);
+    margin-bottom: 6px;
+  }
+
+  /* ---------- Princípios (mesmo padrão visual de "steps" da Metodologia) ---------- */
+  .steps { list-style: none; margin: 28px 0 0; padding: 0; counter-reset: step; max-width: 760px; }
+  .steps li {
+    counter-increment: step;
+    position: relative;
+    padding: 0 0 28px 44px;
+    border-left: 1.5px solid var(--border);
+    margin-left: 15px;
+  }
+  .steps li:last-child { padding-bottom: 0; border-left-color: transparent; }
+  .steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: -15.5px;
+    top: 0;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: 1.5px solid var(--ink);
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .steps h3 { font-size: 16.5px; font-weight: 800; margin: 2px 0 6px; }
+  .steps p { font-size: 14.5px; line-height: 1.6; color: var(--gray-700); margin: 0; }
+
+  /* ---------- Cartão do autor (mesmo padrão visual da home) ---------- */
+  .about-grid {
+    display: grid;
+    grid-template-columns: 0.85fr 1.15fr;
+    gap: 56px;
+    align-items: start;
+  }
+  @media (max-width: 780px) { .about-grid { grid-template-columns: 1fr; gap: 32px; } }
+
+  .author-card {
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .author-photo-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: var(--gray-100);
+  }
+  .author-photo-wrap img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    object-position: 50% 38%;
+    filter: contrast(1.05) brightness(1.02);
+    -webkit-mask-image: linear-gradient(180deg, #000 78%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 78%, transparent 100%);
+    display: block;
+  }
+  .author-body { padding: 22px 26px 26px; }
+  .author-name-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .author-name { font-family: var(--font-display); font-weight: 800; font-size: 19px; }
+  .author-flag { width: 26px; height: auto; border-radius: 3px; flex-shrink: 0; }
+  .author-role { font-size: 13px; color: var(--gray-500); margin-top: 3px; }
+  .author-quote { font-size: 15px; line-height: 1.6; color: var(--gray-700); margin: 14px 0 0; }
+  .author-socials { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
+  .author-handle { font-size: 13.5px; font-weight: 600; }
+  .author-social-icon { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 1px solid var(--border); border-radius: 50%; color: var(--ink); flex-shrink: 0; transition: background .15s ease, color .15s ease; }
+  .author-social-icon:hover { background: var(--ink); color: var(--bg); }
+
+  .pull-quote {
+    max-width: 760px;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(22px, 2.6vw, 30px);
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+    margin: 0 0 8px;
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="brand" href="index.html" aria-label="Farol do Paraná - início">
+    <svg width="22" height="44" viewBox="0 0 60 120" fill="none">
+      <polygon points="18,108 42,108 38,98 22,98" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+      <polygon points="24,98 36,98 33,30 27,30" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+      <line x1="24.6" y1="90" x2="35.4" y2="90" stroke="currentColor" stroke-width="2"/>
+      <line x1="25.6" y1="76" x2="34.4" y2="76" stroke="currentColor" stroke-width="2"/>
+      <line x1="26.6" y1="62" x2="33.4" y2="62" stroke="currentColor" stroke-width="2"/>
+      <line x1="27.6" y1="48" x2="32.4" y2="48" stroke="currentColor" stroke-width="2"/>
+      <polygon points="27,30 33,30 38,26 22,26" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>
+      <rect x="25" y="14" width="10" height="12" stroke="currentColor" stroke-width="2.6"/>
+      <line x1="30" y1="14" x2="30" y2="26" stroke="currentColor" stroke-width="1.8"/>
+      <path d="M24,14 Q30,6 36,14 Z" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>
+      <line x1="30" y1="6" x2="30" y2="2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="30" cy="1.3" r="1.7" fill="currentColor"/>
+    </svg>
+    <span>
+      <span class="brand-name" style="display:block;">Farol do Paraná</span>
+      <span class="brand-sub">Transparência em compras públicas · PR</span>
+    </span>
+  </a>
+
+  <nav class="nav-links" aria-label="Navegação principal">
+    <a href="painel.html">Painel</a>
+    <a href="licitacoes.html">Licitações</a>
+    <a href="contratos.html">Contratos</a>
+    <a href="metodologia.html">Metodologia</a>
+    <a href="sobre.html" aria-current="page">Sobre</a>
+  </nav>
+
+  <div class="header-right">
+    <button class="theme-toggle" id="theme-toggle" aria-label="Alternar modo claro/escuro" aria-pressed="false">
+      <span class="knob"></span>
+    </button>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Abrir menu de navegação" aria-expanded="false" aria-controls="nav-mobile-panel">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</header>
+
+<nav class="nav-mobile-panel" id="nav-mobile-panel" aria-label="Navegação (mobile)">
+  <a href="painel.html">Painel</a>
+  <a href="licitacoes.html">Licitações</a>
+  <a href="contratos.html">Contratos</a>
+  <a href="metodologia.html">Metodologia</a>
+  <a href="sobre.html" aria-current="page">Sobre</a>
+</nav>
+
+<div class="wrap page-head">
+  <div class="eyebrow">Por que o Farol existe</div>
+  <h1>Sobre</h1>
+  <p>Não é sobre mim ser mais capaz que o governo. É sobre o custo de esperar - e quem paga esse custo enquanto ninguém resolve.</p>
+</div>
+
+<!-- ============ MANIFESTO ============ -->
+<section class="section" id="manifesto">
+  <div class="wrap">
+    <div class="section-num">01</div>
+    <h2 style="font-size:28px;font-weight:800;margin:0 0 20px;max-width:640px;">Dado público não é favor, é dívida</h2>
+    <div class="prose">
+      <p>Todo real gasto pelo governo do Paraná já nasce devendo uma explicação a quem pagou por ele. Não é o cidadão que tem que provar que quer saber - é o estado que tem que provar que gastou direito. O Farol existe porque essa dívida quase nunca é paga sozinha.</p>
+      <p>Isso não é ativismo. É engenharia aplicada a um problema que a burocracia decidiu que era normal demais pra resolver.</p>
+    </div>
+  </div>
+</section>
+
+<div class="wrap" style="margin-top:56px;"><div class="cobble"></div></div>
+
+<!-- ============ POR QUE CONSTRUÍ ============ -->
+<section class="section" id="origem">
+  <div class="wrap">
+    <div class="section-num">02</div>
+    <h2 style="font-size:28px;font-weight:800;margin:0 0 20px;max-width:640px;">Por que eu construí isto</h2>
+    <div class="prose">
+      <p>Ninguém me contratou pra fazer o Farol. Não abri licitação, não pedi autorização, não esperei comissão nenhuma aprovar orçamento. Baixei o dado público que a lei já obriga a existir, escrevi o código, e publiquei. Um programador com internet e paciência resolveu, sozinho, o que uma estrutura de estado com milhares de servidores nunca priorizou.</p>
+      <p>Isso não é sobre mim ser mais capaz que o governo. É sobre o fato de que espera institucional tem um custo, e esse custo geralmente é pago por quem não pode esperar.</p>
+    </div>
+  </div>
+</section>
+
+<div class="wrap" style="margin-top:56px;"><div class="cobble"></div></div>
+
+<!-- ============ PRINCÍPIOS ============ -->
+<section class="section" id="principios">
+  <div class="wrap">
+    <div class="section-num">03</div>
+    <h2 style="font-size:28px;font-weight:800;margin:0 0 12px;max-width:640px;">Os princípios</h2>
+    <div class="prose">
+      <p>Não são regras de estilo. São a régua que decide o que o Farol publica e o que ele recusa publicar.</p>
+    </div>
+    <ol class="steps">
+      <li>
+        <h3>Dado bruto é o argumento final</h3>
+        <p>Discurso se debate; número auditável, não. O Farol não existe pra convencer ninguém de nada - existe pra que ninguém mais precise confiar em quem fala, só conferir o que os próprios órgãos publicaram.</p>
+      </li>
+      <li>
+        <h3>Transparência que exige pedido não é transparência</h3>
+        <p>Lei de Acesso à Informação é o mínimo, não o alvo. Se um cidadão comum precisa protocolar, esperar, recorrer - o sistema já falhou. O padrão certo é: o dado já está lá, aberto, antes de alguém perguntar.</p>
+      </li>
+      <li>
+        <h3>Ferramenta feita por uma pessoa, publicada, bate maioria dos comitês</h3>
+        <p>Não é romantismo de garagem. É que comitê otimiza pra não ser culpado, e construtor solo otimiza pra funcionar. O Farol é código aberto ao escrutínio, rodando toda semana, sem reunião nenhuma pra aprovar isso.</p>
+      </li>
+      <li>
+        <h3>Selo de verificação, nunca acusação</h3>
+        <p>Todo alerta aqui aponta um padrão que merece pergunta humana - nunca uma sentença. Precisão importa mais que indignação. Um número errado destrói a credibilidade de mil números certos.</p>
+      </li>
+      <li>
+        <h3>O que não pode ser conferido, não conta como fato</h3>
+        <p>Se a fonte não bate, o Farol não publica. Prefiro mostrar menos e estar certo a mostrar mais e estar em dúvida.</p>
+      </li>
+      <li>
+        <h3>Tecnologia é alavanca de poder - a pergunta é pra quem</h3>
+        <p>Todo governo já usa dado e sistema pra decidir sozinho, longe de quem paga a conta. O Farol devolve a mesma alavanca pro lado de fora: se a máquina pública usa tecnologia pra operar, o cidadão tem que ter tecnologia equivalente pra fiscalizar.</p>
+      </li>
+      <li>
+        <h3>Fiscalizar é o piso, não o teto</h3>
+        <p>Dado público organizado não serve só pra apontar erro - serve pra construir em cima. O mesmo banco de dados que hoje confere contrato amanhã embasa política pública mais precisa, vira matéria-prima pra pesquisa acadêmica e econômica séria, e mapeia cidade inteira com aprendizado de máquina pra prever onde investir antes do problema aparecer. Cobrança é o primeiro uso de dado público, não o único - parar nela é deixar a maior parte do valor na mesa.</p>
+        <p>Destravar esse dado tem efeito direto fora da fiscalização. Empresa que quer vender pro estado passa a enxergar padrão real de preço, prazo e demanda antes de apostar recurso numa licitação, em vez de decidir no escuro. Pesquisador de economia regional ganha uma série histórica que hoje só existe espalhada, portal por portal, PDF por PDF, e que nenhuma universidade sozinha tem orçamento pra reconstruir na mão. Quem planeja infraestrutura - estrada, saneamento, rede de saúde - passa a ter o histórico de gasto por município, ano a ano, em vez de estimativa. E capital sério, privado ou público, não entra onde não existe previsibilidade; previsibilidade começa com dado que qualquer um pode auditar sem pedir licença a ninguém. Cada base que o Farol destrava é, antes de tudo, matéria-prima que alguém mais vai usar pra decidir melhor - empresa, pesquisador, prefeito ou o próprio cidadão.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<div class="wrap" style="margin-top:56px;"><div class="cobble"></div></div>
+
+<!-- ============ FECHAMENTO + AUTOR ============ -->
+<section class="section" id="autor" style="padding-bottom:0;">
+  <div class="wrap">
+    <div class="section-num">04</div>
+    <div class="about-grid">
+      <div class="author-card">
+        <div class="author-photo-wrap">
+          <img src="assets/img/retrato-autor.jpg" alt="Kelven Alcantara, autor do Farol do Paraná">
+        </div>
+        <div class="author-body">
+          <div class="author-name-row">
+            <div class="author-name">Kelven Alcantara</div>
+            <img class="author-flag" src="assets/img/Bandeira_do_Paraná.svg.webp" alt="Bandeira do Paraná" title="Paraná">
+          </div>
+          <div class="author-role">Autor e mantenedor do projeto</div>
+          <p class="author-quote">Antes disso, passei anos como programador e trabalhando com treinamento de modelos de IA. Hoje sou candidato a Deputado Estadual do Paraná pela Missão - quero levar essa mesma capacidade técnica para dentro da máquina pública.</p>
+          <div class="author-socials">
+            <span class="author-handle">@kelvenalca.pr</span>
+            <a class="author-social-icon" href="https://www.instagram.com/kelvenalca.pr/" target="_blank" rel="noopener" aria-label="Instagram de Kelven Alcantara (@kelvenalca.pr)">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.8"/><circle cx="17.4" cy="6.6" r="1.1" fill="currentColor"/></svg>
+            </a>
+            <a class="author-social-icon" href="https://www.tiktok.com/@kelvenalca.pr" target="_blank" rel="noopener" aria-label="TikTok de Kelven Alcantara (@kelvenalca.pr)">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M16.5 3c.4 2.2 1.9 3.9 4 4.3v3c-1.5 0-2.9-.5-4-1.3v6.4c0 3.4-2.7 6.1-6.1 6.1S4.3 18.8 4.3 15.4c0-3.2 2.5-5.8 5.6-6.1v3.1c-1.4.3-2.5 1.6-2.5 3 0 1.7 1.4 3.1 3.1 3.1s3.1-1.4 3.1-3.1V3h2.9z" fill="currentColor"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="pull-quote">Transparência de verdade não pede licença. Ela já existe, e só espera alguém publicar.</p>
+        <div class="prose" style="margin-top:22px;">
+          <p>Eu não construí o Farol só pra ficar de fora olhando. Construí porque acredito que a mesma lógica - construir em vez de esperar, medir em vez de discursar, publicar em vez de arquivar - precisa entrar dentro do estado, não só cobrar ele de fora.</p>
+          <p>Fiscalização é onde essa lógica começa, não onde ela termina: o mesmo dado que hoje aponta problema é a base pra desenhar política pública melhor, pra pesquisa séria sobre a economia do estado, pra planejar cidade com inteligência em vez de intuição - e pra atrair investimento real em infraestrutura, saúde e educação apoiado em gasto público que qualquer um pode conferir, não em promessa de campanha.</p>
+          <p>É por isso que hoje sou candidato: não pra administrar a lentidão, pra substituí-la por infraestrutura que funciona - e que gera, não só corrige.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Farol do Paraná · dados públicos do PNCP · atualizado a partir da coleta estadual 2024–2026</p>
+    <p>Um projeto de Kelven Alcantara</p>
+  </div>
+</footer>
+
+<script>
+  // ---- Theme toggle ----
+  var toggle = document.getElementById('theme-toggle');
+  function currentTheme() {
+    var attr = document.documentElement.getAttribute('data-theme');
+    if (attr) return attr;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function applyTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('farol-theme', t);
+    toggle.setAttribute('aria-pressed', t === 'dark');
+  }
+  toggle.setAttribute('aria-pressed', currentTheme() === 'dark');
+  toggle.addEventListener('click', function () {
+    applyTheme(currentTheme() === 'dark' ? 'light' : 'dark');
+  });
+
+  // ---- Mobile nav toggle ----
+  var navToggle = document.getElementById('nav-toggle');
+  var navPanel = document.getElementById('nav-mobile-panel');
+  function closeNavPanel() {
+    navPanel.classList.remove('open');
+    navToggle.setAttribute('aria-expanded', 'false');
+  }
+  navToggle.addEventListener('click', function () {
+    var open = navPanel.classList.toggle('open');
+    navToggle.setAttribute('aria-expanded', open);
+  });
+  navPanel.querySelectorAll('a').forEach(function (a) {
+    a.addEventListener('click', closeNavPanel);
+  });
+  window.addEventListener('resize', function () {
+    if (window.innerWidth > 860) closeNavPanel();
+  });
+</script>
+
+</body>
+</html>

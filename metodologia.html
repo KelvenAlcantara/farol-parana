@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Metodologia - Farol do Paraná</title>
+<meta name="description" content="Como o Farol do Paraná coleta, trata e publica dados de licitações e contratos: fontes, o que cada valor em R$ significa, cobertura e limitações conhecidas.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/farol-tokens.css">
+<script>
+  (function () {
+    var saved = localStorage.getItem('farol-theme');
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<style>
+  .page-head {
+    padding: 48px 0 40px;
+    border-bottom: 1px solid var(--border);
+  }
+  .page-head h1 {
+    font-size: clamp(30px, 4vw, 44px);
+    font-weight: 900;
+    margin: 8px 0 12px;
+    letter-spacing: -0.02em;
+  }
+  .page-head p {
+    max-width: 680px;
+    font-size: 16.5px;
+    line-height: 1.6;
+    color: var(--gray-700);
+    margin: 0;
+  }
+
+  /* ---------- Sumário / navegação interna ---------- */
+  .toc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 24px;
+  }
+  .toc a {
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 16px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--gray-700);
+  }
+  .toc a:hover { border-color: var(--ink); color: var(--ink); }
+
+  /* ---------- Corpo de texto corrido ---------- */
+  .prose { max-width: 720px; }
+  .prose p { font-size: 16px; line-height: 1.7; color: var(--gray-700); margin: 0 0 16px; }
+  .prose p:last-child { margin-bottom: 0; }
+  .prose strong { color: var(--ink); }
+
+  .section-num {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: 15px;
+    color: var(--gray-500);
+    margin-bottom: 6px;
+  }
+
+  /* ---------- Tabela de definição (campo / significado) ---------- */
+  .def-table-wrap {
+    border: 1px solid var(--border);
+    overflow-x: auto;
+    margin-top: 24px;
+  }
+  table.def-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14.5px;
+  }
+  table.def-table th, table.def-table td {
+    padding: 14px 18px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    line-height: 1.55;
+  }
+  table.def-table th {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gray-500);
+    background: var(--gray-100);
+  }
+  table.def-table tr:last-child td { border-bottom: none; }
+  table.def-table td.mono { font-family: 'Courier New', monospace; font-size: 13px; white-space: nowrap; }
+  table.def-table td strong { color: var(--ink); }
+
+  .selo {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 8px;
+    border-radius: var(--radius);
+    border: 1.5px solid currentColor;
+  }
+  .selo-ok { color: var(--accent-strong); }
+  .selo-warn { color: var(--gray-500); }
+
+  .callout {
+    border-left: 3px solid var(--ink);
+    padding: 16px 22px;
+    margin-top: 20px;
+    background: var(--gray-100);
+  }
+  .callout p { font-size: 14.5px; line-height: 1.65; color: var(--gray-700); margin: 0; }
+  .callout p strong { color: var(--ink); }
+
+  /* ---------- Passo a passo da coleta ---------- */
+  .steps { list-style: none; margin: 28px 0 0; padding: 0; counter-reset: step; }
+  .steps li {
+    counter-increment: step;
+    position: relative;
+    padding: 0 0 28px 44px;
+    border-left: 1.5px solid var(--border);
+    margin-left: 15px;
+  }
+  .steps li:last-child { padding-bottom: 0; border-left-color: transparent; }
+  .steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: -15.5px;
+    top: 0;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    border: 1.5px solid var(--ink);
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .steps h3 { font-size: 16.5px; font-weight: 800; margin: 2px 0 6px; }
+  .steps p { font-size: 14.5px; line-height: 1.6; color: var(--gray-700); margin: 0; }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-top: 24px;
+  }
+  @media (max-width: 700px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+  .stats-cell {
+    background: var(--bg);
+    padding: 22px 16px;
+    text-align: center;
+  }
+  .stats-cell .v {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 24px;
+  }
+  .stats-cell .l {
+    font-size: 12px;
+    color: var(--gray-500);
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .rule-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--gold-strong);
+  }
+  .rule-status .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    border: 1.5px solid var(--gold-strong);
+  }
+
+  .caveats {
+    border: 1px solid var(--border);
+    padding: 28px;
+  }
+  .caveats h2 { font-size: 18px; font-weight: 800; margin: 0 0 14px; }
+  .caveats ul { margin: 0; padding-left: 20px; }
+  .caveats li { font-size: 14.5px; line-height: 1.6; color: var(--gray-700); margin-bottom: 10px; }
+  .caveats li:last-child { margin-bottom: 0; }
+
+  .not-does {
+    border: 1px solid var(--border);
+    padding: 28px;
+  }
+  .not-does h2 { font-size: 18px; font-weight: 800; margin: 0 0 14px; }
+  .not-does ul { margin: 0; padding-left: 20px; }
+  .not-does li { font-size: 14.5px; line-height: 1.6; color: var(--gray-700); margin-bottom: 10px; }
+  .not-does li:last-child { margin-bottom: 0; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="brand" href="index.html" aria-label="Farol do Paraná - início">
+    <svg width="22" height="44" viewBox="0 0 60 120" fill="none">
+      <polygon points="18,108 42,108 38,98 22,98" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+      <polygon points="24,98 36,98 33,30 27,30" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+      <line x1="24.6" y1="90" x2="35.4" y2="90" stroke="currentColor" stroke-width="2"/>
+      <line x1="25.6" y1="76" x2="34.4" y2="76" stroke="currentColor" stroke-width="2"/>
+      <line x1="26.6" y1="62" x2="33.4" y2="62" stroke="currentColor" stroke-width="2"/>
+      <line x1="27.6" y1="48" x2="32.4" y2="48" stroke="currentColor" stroke-width="2"/>
+      <polygon points="27,30 33,30 38,26 22,26" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>
+      <rect x="25" y="14" width="10" height="12" stroke="currentColor" stroke-width="2.6"/>
+      <line x1="30" y1="14" x2="30" y2="26" stroke="currentColor" stroke-width="1.8"/>
+      <path d="M24,14 Q30,6 36,14 Z" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>
+      <line x1="30" y1="6" x2="30" y2="2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="30" cy="1.3" r="1.7" fill="currentColor"/>
+    </svg>
+    <span>
+      <span class="brand-name" style="display:block;">Farol do Paraná</span>
+      <span class="brand-sub">Transparência em compras públicas · PR</span>
+    </span>
+  </a>
+
+  <nav class="nav-links" aria-label="Navegação principal">
+    <a href="painel.html">Painel</a>
+    <a href="licitacoes.html">Licitações</a>
+    <a href="contratos.html">Contratos</a>
+    <a href="metodologia.html" aria-current="page">Metodologia</a>
+    <a href="sobre.html">Sobre</a>
+  </nav>
+
+  <div class="header-right">
+    <button class="theme-toggle" id="theme-toggle" aria-label="Alternar modo claro/escuro" aria-pressed="false">
+      <span class="knob"></span>
+    </button>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Abrir menu de navegação" aria-expanded="false" aria-controls="nav-mobile-panel">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</header>
+
+<nav class="nav-mobile-panel" id="nav-mobile-panel" aria-label="Navegação (mobile)">
+  <a href="painel.html">Painel</a>
+  <a href="licitacoes.html">Licitações</a>
+  <a href="contratos.html">Contratos</a>
+  <a href="metodologia.html" aria-current="page">Metodologia</a>
+  <a href="sobre.html">Sobre</a>
+</nav>
+
+<div class="wrap page-head">
+  <div class="eyebrow">Como isso é medido, não estimado</div>
+  <h1>Metodologia</h1>
+  <p>Esta página explica, em linguagem simples, de onde vêm os números do Farol do Paraná, como cada valor em reais é escolhido, o que já está coberto e o que ainda não está. Nenhuma seção do site mostra dado que não exista de verdade na fonte oficial.</p>
+  <div class="toc">
+    <a href="#fontes">Fontes</a>
+    <a href="#camadas">As duas camadas</a>
+    <a href="#valores">O que cada valor significa</a>
+    <a href="#cobertura">Cobertura</a>
+    <a href="#coleta">Como a coleta funciona</a>
+    <a href="#alertas">Regras de alerta</a>
+    <a href="#limitacoes">Limitações</a>
+  </div>
+</div>
+
+<!-- ============ FONTES ============ -->
+<section class="section" id="fontes">
+  <div class="wrap">
+    <div class="section-num">01</div>
+    <h2 style="font-size:28px;font-weight:800;margin:0 0 20px;max-width:600px;">De onde vêm os dados</h2>
+    <div class="prose">
+      <p>Toda informação do Farol do Paraná vem do <strong>PNCP - Portal Nacional de Contratações Públicas</strong>, o sistema federal onde todo órgão público do Brasil é obrigado por lei a publicar suas licitações e contratos desde 1º de janeiro de 2024 (Lei 14.133/2021, que substituiu a antiga Lei 8.666/93).</p>
+      <p>O Farol lê o PNCP pela sua <strong>API de consulta pública</strong> (o mesmo mecanismo que qualquer sistema pode usar para ler os dados publicados - não exige login nem autorização especial). Não há digitação manual, planilha paralela ou fonte extra: o que está no PNCP é o que aparece aqui, reorganizado para ficar legível.</p>
+      <p>Isso tem uma consequência importante: se um órgão publicar errado ou atrasado no PNCP, esse erro aparece aqui também. O Farol organiza e explica o dado público - ele não o corrige nem o audita documento por documento.</p>
+    </div>
+  </div>
+</section>
+
+<div class="wrap" style="margin-top:56px;"><div class="cobble"></div></div>
+
+<!-- ============ AS DUAS CAMADAS ============ -->
+<section class="section" id="camadas">
+  <div class="wrap">
+    <div class="section-num">02</div>
+    <h2 style="font-size:28px;font-weight:800;margin:0 0 12px;max-width:600px;">As duas camadas de coleta</h2>
+    <div class="prose">
+      <p>O PNCP separa o processo de compra pública em dois momentos, e o Farol lê os dois separadamente - é por isso que o site tem uma página de <strong>Licitações</strong> e outra de <strong>Contratos</strong>, e os números de uma não são o mesmo que os da outra.</p>
+    </div>
+    <div class="def-table-wrap">
+      <table class="def-table">
+        <thead>
+          <tr>
+            <th style="width:16%;">Camada</th>
+            <th style="width:20%;">O que é</th>
+            <th>O que o Farol mostra</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Licitações</strong><br><span style="color:var(--gray-500);font-size:12.5px;">("contratações" no PNCP)</span></td>
+            <td>O processo de disputa em si - o edital, a modalidade (pregão, dispensa, concorrência etc.) e o valor previsto antes de qualquer fornecedor ser escolhido.</td>
+            <td>Uma licitação publicada nem sempre vira um contrato assinado - pode ser cancelada, deserta ou ainda estar em andamento. É o retrato do <em>processo</em>.</td>
+          </tr>
+          <tr>
+            <td><strong>Contratos</strong></td>
+            <td>O resultado: o vínculo já assinado entre o órgão público e o fornecedor vencedor, com o valor efetivamente contratado.</td>
+            <td>É o retrato do <em>resultado</em> - o dinheiro que de fato foi comprometido com alguém.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">
+      <p><strong>Por que os totais não batem entre as duas páginas:</strong> nem toda licitação published vira contrato no mesmo período coletado, e um único processo licitatório pode gerar mais de um contrato (itens diferentes, fornecedores diferentes). Comparar a contagem de licitações com a de contratos município a município não é um erro de coleta - é assim que o processo de compra pública realmente funciona.</p>
+    </div>
+  </div>
+</section>
+
+<div class="wrap" style="margin-top:56px;"><div class="cobble"></div></div>
+
+<!-- ============ O QUE CADA VALOR SIGNIFICA ============ -->
+<section class="section" id="valores">
+  <div class="wrap">
+    <div class="section-num">03</div>
+    <h2 style="font-size:28px;font-weight:800;margin:0 0 12px;max-width:640px;">O que cada valor em R$ significa</h2>
+    <div class="prose">
+      <p>Esta é a parte mais importante desta página. O PNCP guarda mais de um campo de valor para uma licitação, e eles <strong>não significam a mesma coisa</strong> - usar o campo errado é exatamente o que faz um valor parecer absurdo (uma manutenção de veículo comum "custando" mais que o PIB do Brasil, por exemplo). O Farol trata os dois campos de forma diferente e mostra qual é qual.</p>
+    </div>
+
+    <h3 style="font-size:17px;font-weight:800;margin:32px 0 6px;">Nas Licitações</h3>
+    <div class="def-table-wrap">
+      <table class="def-table">
+        <thead>
+          <tr>
+            <th style="width:20%;">Campo do PNCP</th>
+            <th>O que significa</th>
+            <th style="width:24%;">Quando aparece</th>
+            <th style="width:14%;">Coluna no site</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="mono">valorTotalEstimado</td>
+            <td>Estimativa feita <strong>antes</strong> da disputa - o órgão multiplica a quantidade que pretende comprar pelo preço de referência. É uma previsão, não o que foi de fato gasto. O PNCP já registrou casos de erro de digitação na quantidade que inflam este campo para valores sem sentido.</td>
+            <td>Sempre, desde a publicação do edital.</td>
+            <td>Valor estimado</td>
+          </tr>
+          <tr>
+            <td class="mono">valorTotalHomologado</td>
+            <td>Valor total <strong>homologado</strong> - calculado depois que a licitação já tem um resultado registrado (fornecedor vencedor definido). É o valor real aprovado, não mais uma previsão.</td>
+            <td>Só depois que o resultado é registrado no PNCP; fica em branco (-) antes disso.</td>
+            <td>Valor homologado</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">
+      <p>Desde 03/08/2026 a tabela de licitações individuais mostra <strong>Valor estimado</strong> e <strong>Valor homologado</strong> como duas colunas lado a lado, em vez de escolher uma para exibir. O estimado é a previsão pré-disputa (sujeita aos erros de digitação já conhecidos na fonte) e está sempre presente; o homologado só aparece depois que a licitação tem resultado registrado - antes disso a coluna fica em branco (-), o que não é dado faltando, é a licitação ainda não ter sido decidida. Nunca escondemos qual dos dois é qual.</p>
+    </div>
+
+    <h3 style="font-size:17px;font-weight:800;margin:32px 0 6px;">Nos Contratos</h3>
+    <div class="def-table-wrap">
+      <table class="def-table">
+        <thead>
+          <tr>
+            <th style="width:20%;">Campo do PNCP</th>
+            <th>O que significa</th>
+            <th style="width:24%;">Confiabilidade</th>
+            <th style="width:14%;">Selo no site</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="mono">valorGlobal</td>
+            <td>O valor total do contrato já <strong>assinado</strong> entre o órgão e o fornecedor. Não é uma estimativa pré-disputa - é o compromisso financeiro real registrado no instrumento contratual.</td>
+            <td>Alta - não apresenta o mesmo padrão de erro de digitação encontrado no valor estimado das licitações. Conferido manualmente contra páginas reais do PNCP.</td>
+            <td>-</td>
+          </tr>
+          <tr>
+            <td class="mono">valorGlobal / valorInicial</td>
+            <td>Casos em que o próprio PNCP registrou o contrato com esses campos <strong>zerados</strong> - o valor simplesmente não foi estipulado na fonte, não é um erro de coleta do Farol.</td>
+            <td>0,8% dos contratos (achado de 02/08/2026); concentrados em "Contrato (termo inicial)", "Outros" e "Dispensa de Licitação".</td>
+            <td><span class="selo selo-warn">não estipulado</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:13.5px;color:var(--gray-500);margin-top:14px;">A página de Contratos não exibe selo de "estimado" - o valor ali já é o valor contratado, ponto final. O selo "não estipulado" é outra coisa: sinaliza os poucos contratos que a própria fonte publicou sem valor, em vez de escondê-los atrás de um R$ 0,00 mudo.</p>
+  </div>
+</section>
+
+<div class="wrap" style="margin-top:56px;"><div class="cobble"></div></div>
+
+<!-- ============ COBERTURA ============ -->
+<section class="section" id="cobertura">
+  <div class="wrap">
+    <div class="section-num">04</div>
+    <h2 style="font-size:28px;font-weight:800;margin:0 0 20px;max-width:600px;">Cobertura e período</h2>
+    <div class="stats-row">
+      <div class="stats-cell"><div class="v tabular">397<span style="font-size:0.55em;color:var(--gray-500);"> / 399</span></div><div class="l">Municípios cobertos</div></div>
+      <div class="stats-cell"><div class="v tabular">2024–2026</div><div class="l">Período coletado</div></div>
+      <div class="stats-cell"><div class="v tabular">263.364</div><div class="l">Licitações</div></div>
+      <div class="stats-cell"><div class="v tabular">218.103</div><div class="l">Contratos</div></div>
+    </div>
+    <div class="prose" style="margin-top:28px;">
+      <p><strong>Por que 2024 é o início:</strong> a Lei 8.666/93 foi revogada em 30/12/2023. Desde 1º/01/2024, toda licitação segue a Lei 14.133/2021 e o PNCP passou a centralizar os dados de forma consistente. Períodos anteriores a 2024 não têm a mesma qualidade de publicação - por isso o Farol não tenta reconstruir histórico anterior a essa data.</p>
+      <p><strong>Por que 2026 aparece "parcial":</strong> a coleta usa uma <strong>margem de segurança de 7 dias</strong>. O PNCP continua recebendo publicações novas por dias depois do fato ocorrer, então o mês corrente nunca é tratado como "fechado" - só avançamos para o mês seguinte quando o mês anterior já ficou pelo menos 7 dias no passado. Isso evita fechar um mês pela metade e nunca mais voltar a completá-lo.</p>
+      <p><strong>Os 2 municípios ainda fora, identificados:</strong> Bom Jesus do Sul e Iracema do Oeste. Nenhum dos dois aparece nem na própria lista de referência de municípios do PNCP (o combo de busca do portal) - checagem manual confirmou que nenhum órgão das duas prefeituras jamais publicou lá, obrigação que existe desde 2023 (Lei 14.133/2021, art. 174). As duas cidades têm atividade de compras real e portal de transparência próprio (Iracema do Oeste, por exemplo, lista 603 contratos no portal local) - a ausência aqui é falta de adesão da própria cidade ao PNCP, não falha da coleta do Farol nem do PNCP em si.</p>
+    </div>
+  </div>
+</section>
+
+<div class="wrap" style="margin-top:56px;"><div class="cobble"></div></div>
+
+<!-- ============ COMO A COLETA FUNCIONA ============ -->
+<section class="section" id="coleta">
+  <div class="wrap">
+    <div class="section-num">05</div>
+    <h2 style="font-size:28px;font-weight:800;margin:0 0 12px;max-width:600px;">Como a coleta funciona, passo a passo</h2>
+    <div class="prose">
+      <p>A API pública do PNCP não é perfeita: às vezes recusa uma requisição temporariamente, às vezes demora, às vezes cai no meio de uma consulta grande. O Farol foi desenhado para lidar com isso sem perder dado nem duplicar nada.</p>
+    </div>
+    <ol class="steps">
+      <li>
+        <h3>Varredura mês a mês</h3>
+        <p>Em vez de pedir "todas as licitações de 2024 a 2026" de uma vez (o que a API não aguenta), o coletor varre um mês por vez, para cada ano configurado, tanto para licitações quanto para contratos.</p>
+      </li>
+      <li>
+        <h3>Cada janela é registrada num "manifesto" de progresso</h3>
+        <p>Toda janela mensal coletada é gravada com seu status: <strong>completo</strong> (bateu exatamente com o total declarado pela própria API), <strong>vazio</strong> (mês sem registro, o que é legítimo), <strong>incompleto</strong> ou <strong>erro</strong> (a API falhou antes de terminar). Só "completo" e "vazio" são considerados definitivos.</p>
+      </li>
+      <li>
+        <h3>Retomada automática, sem perder progresso</h3>
+        <p>Se a API recusar uma requisição (erro temporário) ou cair no meio, aquela janela específica fica marcada como pendente e é tentada de novo numa passada seguinte - sem repetir o que já foi coletado com sucesso. Uma coleta completa do estado inteiro normalmente precisa de várias passadas até zerar os pendentes.</p>
+      </li>
+      <li>
+        <h3>Conferência contra o total declarado pela própria fonte</h3>
+        <p>Antes de qualquer dado virar número público, o total de registros baixados é conferido contra o total que a própria API do PNCP declarou para aquela janela. Só avança se os números baterem - essa é a régua que decide se um mês está "fechado" de verdade.</p>
+      </li>
+      <li>
+        <h3>Publicação no site</h3>
+        <p>Só depois da conferência, os dados são organizados por município e exportados para as páginas públicas (Painel, Licitações, Contratos). Atualizar o site significa rodar essa coleta de novo e substituir os arquivos - nunca editar um número à mão.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<div class="wrap" style="margin-top:56px;"><div class="cobble"></div></div>
+
+<!-- ============ REGRAS DE ALERTA ============ -->
+<section class="section" id="alertas">
+  <div class="wrap">
+    <div class="section-num">06</div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px;">
+      <h2 style="font-size:28px;font-weight:800;margin:0;max-width:600px;">Regras de alerta</h2>
+      <span class="rule-status"><span class="dot"></span>Metodologia publicada · dado em calibração</span>
+    </div>
+    <div class="prose" style="margin-top:12px;">
+      <p>O Farol vai destacar padrões estatísticos que <strong>merecem uma pergunta humana</strong> - nunca uma acusação de irregularidade. As cinco regras abaixo já estão definidas e documentadas, mas ainda não estão calibradas com o volume completo de dados estaduais: por isso a aba "Alertas" ainda não está publicada. Esta seção existe para que qualquer pessoa possa ver, desde já, exatamente o que será medido e como.</p>
+    </div>
+    <div class="def-table-wrap">
+      <table class="def-table">
+        <thead>
+          <tr>
+            <th style="width:14%;">Regra</th>
+            <th style="width:32%;">O que verifica</th>
+            <th>Âncora (lei ou estatística)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>1. Sobrepreço</strong></td>
+            <td>Se o preço unitário pago por um item está bem acima do que outros órgãos pagaram por itens equivalentes, na mesma faixa de quantidade e no mesmo período.</td>
+            <td>Comparação estatística contra a distribuição de preços do próprio item (percentis 50/75/90) - só dispara quando há uma amostra mínima de compras e fornecedores distintos para aquele item.</td>
+          </tr>
+          <tr>
+            <td><strong>2. Fragmentação</strong></td>
+            <td>Se um órgão usa várias dispensas de licitação pequenas, para o mesmo tipo de objeto, que somadas ultrapassam o limite legal que obrigaria uma licitação formal.</td>
+            <td>Lei 14.133/2021, art. 75 - os limites de dispensa são reajustados todo ano por decreto (em 2026: R$ 65.492,11 para compras/serviços; R$ 130.984,20 para obras/engenharia). A própria lei veda esse tipo de fracionamento artificial.</td>
+          </tr>
+          <tr>
+            <td><strong>3. Concentração</strong></td>
+            <td>Se poucos fornecedores concentram uma fatia desproporcional das contratações de um órgão numa categoria de compra.</td>
+            <td>Índice Herfindahl-Hirschman (HHI), a mesma métrica usada para medir concentração de mercado - calculado só quando há uma base mínima de contratos no recorte.</td>
+          </tr>
+          <tr>
+            <td><strong>4. Crescimento anormal</strong></td>
+            <td>Se o volume contratado com um fornecedor específico dá um salto abrupto de um ano para o outro, fora do padrão da própria série histórica dele.</td>
+            <td>Desvio estatístico (z-score) contra o histórico do próprio fornecedor - exige histórico mínimo, então fornecedor novo não gera este alerta.</td>
+          </tr>
+          <tr>
+            <td><strong>5. Aditivos</strong></td>
+            <td>Se um contrato cresce muito de valor depois de assinado, por meio de termos aditivos sucessivos.</td>
+            <td>Lei 14.133/2021, art. 125 - limita acréscimos a 25% do valor original (obras, serviços e compras) ou 50% (reforma de edifício/equipamento). Aditivos que se aproximam desse teto legal são destacados.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<div class="wrap" style="margin-top:56px;"><div class="cobble"></div></div>
+
+<!-- ============ O QUE NÃO FAZ + LIMITAÇÕES ============ -->
+<section class="section" id="limitacoes" style="padding-bottom:0;">
+  <div class="wrap">
+    <div class="section-num">07</div>
+    <h2 style="font-size:28px;font-weight:800;margin:0 0 24px;max-width:600px;">O que esta metodologia não faz - e limitações conhecidas</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+      <div class="not-does">
+        <h2>O Farol do Paraná não faz</h2>
+        <ul>
+          <li>Não afirma fraude, superfaturamento ou qualquer ilegalidade.</li>
+          <li>Não substitui análise documental de um processo específico.</li>
+          <li>Não gera conclusão automática - no máximo, uma hipótese que merece verificação humana.</li>
+          <li>Não corrige nem reinterpreta dado publicado errado na fonte - reproduz o PNCP, com a ressalva visível quando o campo é conhecidamente instável (caso do valor estimado).</li>
+        </ul>
+      </div>
+      <div class="caveats">
+        <h2>Limitações conhecidas atualmente</h2>
+        <ul>
+          <li>Contagens de licitações/contratos não são o mesmo que valor financeiro - um município pode ter poucos registros de alto valor, ou muitos de baixo valor.</li>
+          <li>O ano de referência é a data de <strong>publicação</strong> no PNCP, não a data de assinatura ou vigência do contrato.</li>
+          <li>2026 está parcialmente coletado (ver seção de Cobertura acima) e vai crescer nas próximas atualizações.</li>
+          <li>Alguns municípios pequenos aparecem com volume desproporcional ao porte populacional (ex.: sede de consórcio ou autarquia regional) - ranking de volume bruto não deve ser lido como "atividade per capita".</li>
+          <li>A adoção do PNCP é desigual entre municípios - publicação incompleta ou atrasada em alguns casos é um problema da fonte, não da coleta.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Farol do Paraná · dados públicos do PNCP · atualizado a partir da coleta estadual 2024–2026</p>
+    <p>Um projeto de Kelven Alcantara</p>
+  </div>
+</footer>
+
+<script>
+  // ---- Theme toggle ----
+  var toggle = document.getElementById('theme-toggle');
+  function currentTheme() {
+    var attr = document.documentElement.getAttribute('data-theme');
+    if (attr) return attr;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function applyTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('farol-theme', t);
+    toggle.setAttribute('aria-pressed', t === 'dark');
+  }
+  toggle.setAttribute('aria-pressed', currentTheme() === 'dark');
+  toggle.addEventListener('click', function () {
+    applyTheme(currentTheme() === 'dark' ? 'light' : 'dark');
+  });
+
+  // ---- Mobile nav toggle ----
+  var navToggle = document.getElementById('nav-toggle');
+  var navPanel = document.getElementById('nav-mobile-panel');
+  function closeNavPanel() {
+    navPanel.classList.remove('open');
+    navToggle.setAttribute('aria-expanded', 'false');
+  }
+  navToggle.addEventListener('click', function () {
+    var open = navPanel.classList.toggle('open');
+    navToggle.setAttribute('aria-expanded', open);
+  });
+  navPanel.querySelectorAll('a').forEach(function (a) {
+    a.addEventListener('click', closeNavPanel);
+  });
+  window.addEventListener('resize', function () {
+    if (window.innerWidth > 860) closeNavPanel();
+  });
+</script>
+
+</body>
+</html>

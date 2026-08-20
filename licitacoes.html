@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Licitações - Farol do Paraná</title>
+<meta name="description" content="Drill-down de licitações por município, ano e modalidade: 263.364 registros publicados no PNCP em 397 de 399 municípios do Paraná, 2024–2026.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/farol-tokens.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
+<!-- Dado real do farol-engine. Pra atualizar esta página no mês que vem:
+     rode `python scripts/exportar_licitacoes.py --destino ../farol-parana/data`
+     no farol-engine e cole esses 2 arquivos por cima destes - nada mais muda. -->
+<script src="data/licitacoes_municipios.js"></script>
+<script src="data/licitacoes_stats.js"></script>
+<script>
+  (function () {
+    var saved = localStorage.getItem('farol-theme');
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<style>
+  .page-head {
+    padding: 48px 0 40px;
+    border-bottom: 1px solid var(--border);
+  }
+  .page-head h1 {
+    font-size: clamp(30px, 4vw, 44px);
+    font-weight: 900;
+    margin: 8px 0 12px;
+    letter-spacing: -0.02em;
+  }
+  .page-head p {
+    max-width: 640px;
+    font-size: 16.5px;
+    line-height: 1.6;
+    color: var(--gray-700);
+    margin: 0;
+  }
+  .source-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 18px;
+    font-size: 13px;
+    color: var(--gray-500);
+  }
+  .source-tag svg { flex-shrink: 0; }
+
+  .valor-note {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    max-width: 640px;
+    margin-top: 20px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--gray-700);
+  }
+  .valor-note svg { flex-shrink: 0; margin-top: 2px; color: var(--gray-500); }
+
+  .kpi-value.text { font-size: 24px; line-height: 1.2; }
+
+  .chart-card {
+    border: 1px solid var(--border);
+    padding: 28px;
+  }
+  .chart-card h2 {
+    font-size: 20px;
+    font-weight: 800;
+    margin: 0 0 4px;
+  }
+  .chart-card .note {
+    font-size: 13.5px;
+    color: var(--gray-500);
+    margin: 0 0 20px;
+  }
+  .chart-wrap { position: relative; height: 420px; }
+  .chart-wrap.short { height: 260px; }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 2px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-top: 24px;
+  }
+  .stats-cell {
+    background: var(--bg);
+    padding: 20px 16px;
+    text-align: center;
+  }
+  .stats-cell .v {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 22px;
+  }
+  .stats-cell .l {
+    font-size: 12px;
+    color: var(--gray-500);
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .drill-search-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .drill-panel {
+    border: 1px solid var(--border);
+    padding: 28px;
+    margin-top: 20px;
+  }
+  .drill-empty { color: var(--gray-500); font-size: 14.5px; }
+  .drill-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .drill-heading h3 { font-size: 22px; font-weight: 800; margin: 0; }
+  .drill-heading .rank { font-size: 13.5px; color: var(--gray-500); }
+  .drill-cols { display: grid; grid-template-columns: 1.4fr 1fr; gap: 32px; }
+  @media (max-width: 720px) { .drill-cols { grid-template-columns: 1fr; } }
+  .drill-sub { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--gray-500); margin-bottom: 14px; }
+  .modalidade-bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .modalidade-bar-label { width: 168px; font-size: 13.5px; color: var(--gray-700); flex-shrink: 0; }
+  .modalidade-bar-track { flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .modalidade-bar-fill { height: 100%; background: var(--ink); }
+  .modalidade-bar-value { width: 56px; text-align: right; font-variant-numeric: tabular-nums; font-size: 13.5px; color: var(--gray-700); flex-shrink: 0; }
+  .drill-ano-row { display: flex; gap: 2px; background: var(--border); border: 1px solid var(--border); }
+  .drill-ano-cell { flex: 1; background: var(--bg); padding: 16px; text-align: center; }
+  .drill-ano-cell .v { font-family: var(--font-display); font-weight: 800; font-size: 19px; }
+  .drill-ano-cell .l { font-size: 11.5px; color: var(--gray-500); margin-top: 4px; }
+
+  .drill-registros { margin-top: 32px; }
+  .drill-registros-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+  .drill-registros-toolbar .search-input { min-width: 220px; }
+  .registro-link { color: var(--ink); text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: 2px; white-space: nowrap; }
+  .registro-link:hover { text-decoration-color: var(--ink); }
+
+  /* Tabela de registros individuais (licitações/contratos) usa largura fixa
+     por coluna -- sem isso, colunas de texto longo (órgão, objeto) tentam se
+     redimensionar pelo conteúdo e o texto de uma coluna acaba desenhado por
+     cima da coluna vizinha em vez de quebrar linha ou truncar. */
+  table.data-table.data-table-detalhe { table-layout: fixed; }
+  .data-table-detalhe td.registro-orgao {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .data-table-detalhe td.registro-objeto {
+    white-space: normal; word-wrap: break-word; overflow-wrap: break-word;
+  }
+  .valor-tag {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-top: 2px;
+    cursor: help;
+  }
+  .valor-tag-warn { color: var(--gray-500); }
+  .valor-tag-ok { color: var(--ink); }
+
+  .table-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .search-input {
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    color: var(--ink);
+    padding: 10px 16px;
+    border-radius: var(--radius);
+    font-size: 14.5px;
+    font-family: var(--font-body);
+    min-width: 240px;
+  }
+  .search-input:focus { outline: none; border-color: var(--ink); }
+  .table-count { font-size: 13.5px; color: var(--gray-500); }
+
+  .data-table-wrap {
+    border: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  table.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  table.data-table th, table.data-table td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  table.data-table th {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gray-500);
+    cursor: pointer;
+    user-select: none;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+  }
+  table.data-table th:hover { color: var(--ink); }
+  table.data-table td.num, table.data-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  table.data-table tr:last-child td { border-bottom: none; }
+  table.data-table tbody tr { cursor: pointer; }
+  table.data-table tbody tr:hover { background: var(--gray-50, rgba(128,128,128,0.06)); }
+  .rank-cell { color: var(--gray-500); font-variant-numeric: tabular-nums; }
+
+  .table-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    margin-top: 18px;
+  }
+  .page-btn {
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    color: var(--ink);
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .page-btn:hover:not(:disabled) { border-color: var(--ink); }
+  .page-btn:disabled { opacity: 0.35; cursor: default; }
+  .page-info { font-size: 13.5px; color: var(--gray-500); font-variant-numeric: tabular-nums; }
+
+  .caveats {
+    border: 1px solid var(--border);
+    padding: 28px;
+  }
+  .caveats h2 { font-size: 18px; font-weight: 800; margin: 0 0 14px; }
+  .caveats ul { margin: 0; padding-left: 20px; }
+  .caveats li { font-size: 14.5px; line-height: 1.6; color: var(--gray-700); margin-bottom: 10px; }
+  .caveats li:last-child { margin-bottom: 0; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="brand" href="index.html" aria-label="Farol do Paraná - início">
+    <svg width="22" height="44" viewBox="0 0 60 120" fill="none">
+      <polygon points="18,108 42,108 38,98 22,98" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+      <polygon points="24,98 36,98 33,30 27,30" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+      <line x1="24.6" y1="90" x2="35.4" y2="90" stroke="currentColor" stroke-width="2"/>
+      <line x1="25.6" y1="76" x2="34.4" y2="76" stroke="currentColor" stroke-width="2"/>
+      <line x1="26.6" y1="62" x2="33.4" y2="62" stroke="currentColor" stroke-width="2"/>
+      <line x1="27.6" y1="48" x2="32.4" y2="48" stroke="currentColor" stroke-width="2"/>
+      <polygon points="27,30 33,30 38,26 22,26" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>
+      <rect x="25" y="14" width="10" height="12" stroke="currentColor" stroke-width="2.6"/>
+      <line x1="30" y1="14" x2="30" y2="26" stroke="currentColor" stroke-width="1.8"/>
+      <path d="M24,14 Q30,6 36,14 Z" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>
+      <line x1="30" y1="6" x2="30" y2="2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="30" cy="1.3" r="1.7" fill="currentColor"/>
+    </svg>
+    <span>
+      <span class="brand-name" style="display:block;">Farol do Paraná</span>
+      <span class="brand-sub">Transparência em compras públicas · PR</span>
+    </span>
+  </a>
+
+  <nav class="nav-links" aria-label="Navegação principal">
+    <a href="painel.html">Painel</a>
+    <a href="licitacoes.html" aria-current="page">Licitações</a>
+    <a href="contratos.html">Contratos</a>
+    <a href="metodologia.html">Metodologia</a>
+    <a href="sobre.html">Sobre</a>
+  </nav>
+
+  <div class="header-right">
+    <button class="theme-toggle" id="theme-toggle" aria-label="Alternar modo claro/escuro" aria-pressed="false">
+      <span class="knob"></span>
+    </button>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Abrir menu de navegação" aria-expanded="false" aria-controls="nav-mobile-panel">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</header>
+
+<nav class="nav-mobile-panel" id="nav-mobile-panel" aria-label="Navegação (mobile)">
+  <a href="painel.html">Painel</a>
+  <a href="licitacoes.html" aria-current="page">Licitações</a>
+  <a href="contratos.html">Contratos</a>
+  <a href="metodologia.html">Metodologia</a>
+  <a href="sobre.html">Sobre</a>
+</nav>
+
+<div class="wrap page-head">
+  <div class="eyebrow">Licitações públicas</div>
+  <h1>Quem comprou, quando e por qual modalidade</h1>
+  <p><span id="intro-text">carregando…</span></p>
+  <div class="source-tag">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <span id="source-tag-text">carregando…</span>
+  </div>
+  <div class="valor-note">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><line x1="12" y1="8" x2="12" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16.3" r="1.1" fill="currentColor"/></svg>
+    <span id="valor-note-text">carregando…</span>
+  </div>
+</div>
+
+<section class="section" id="numeros">
+  <div class="wrap">
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <svg class="kpi-araucaria" width="22" height="22" viewBox="0 0 24 24" fill="none"><line x1="12" y1="23" x2="12" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12,16 Q7,17 4,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,16 Q17,17 20,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,8 Q9,9 7,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M12,8 Q15,9 17,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="4" cy="15" r="1.4" fill="currentColor"/><circle cx="20" cy="15" r="1.4" fill="currentColor"/><circle cx="12" cy="15.5" r="1" fill="currentColor"/><circle cx="7" cy="7" r="1.2" fill="currentColor"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/><circle cx="12" cy="6.3" r="0.9" fill="currentColor"/></svg>
+        <div class="kpi-label">Licitações</div>
+        <div class="kpi-value tabular" id="kpi-total">-</div>
+        <div class="kpi-sub" id="kpi-total-sub">-</div>
+      </div>
+      <div class="kpi-card">
+        <svg class="kpi-araucaria" width="22" height="22" viewBox="0 0 24 24" fill="none"><line x1="12" y1="23" x2="12" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12,16 Q7,17 4,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,16 Q17,17 20,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,8 Q9,9 7,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M12,8 Q15,9 17,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="4" cy="15" r="1.4" fill="currentColor"/><circle cx="20" cy="15" r="1.4" fill="currentColor"/><circle cx="12" cy="15.5" r="1" fill="currentColor"/><circle cx="7" cy="7" r="1.2" fill="currentColor"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/><circle cx="12" cy="6.3" r="0.9" fill="currentColor"/></svg>
+        <div class="kpi-label">Município líder</div>
+        <div class="kpi-value text" id="kpi-lider-municipio">-</div>
+        <div class="kpi-sub" id="kpi-lider-municipio-sub">-</div>
+      </div>
+      <div class="kpi-card">
+        <svg class="kpi-araucaria" width="22" height="22" viewBox="0 0 24 24" fill="none"><line x1="12" y1="23" x2="12" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12,16 Q7,17 4,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,16 Q17,17 20,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,8 Q9,9 7,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M12,8 Q15,9 17,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="4" cy="15" r="1.4" fill="currentColor"/><circle cx="20" cy="15" r="1.4" fill="currentColor"/><circle cx="12" cy="15.5" r="1" fill="currentColor"/><circle cx="7" cy="7" r="1.2" fill="currentColor"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/><circle cx="12" cy="6.3" r="0.9" fill="currentColor"/></svg>
+        <div class="kpi-label">Modalidade líder</div>
+        <div class="kpi-value text" id="kpi-lider-modalidade">-</div>
+        <div class="kpi-sub" id="kpi-lider-modalidade-sub">-</div>
+      </div>
+      <div class="kpi-card">
+        <svg class="kpi-araucaria" width="22" height="22" viewBox="0 0 24 24" fill="none"><line x1="12" y1="23" x2="12" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12,16 Q7,17 4,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,16 Q17,17 20,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,8 Q9,9 7,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M12,8 Q15,9 17,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="4" cy="15" r="1.4" fill="currentColor"/><circle cx="20" cy="15" r="1.4" fill="currentColor"/><circle cx="12" cy="15.5" r="1" fill="currentColor"/><circle cx="7" cy="7" r="1.2" fill="currentColor"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/><circle cx="12" cy="6.3" r="0.9" fill="currentColor"/></svg>
+        <div class="kpi-label">Municípios cobertos</div>
+        <div class="kpi-value tabular"><span id="kpi-municipios">-</span><span style="color:var(--gray-700);font-size:0.5em;"> / <span id="kpi-municipios-total">-</span></span></div>
+        <div class="kpi-sub" id="kpi-municipios-sub">-</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap" style="margin-top:56px;">
+  <div class="cobble"></div>
+</div>
+
+<section class="section" id="modalidade">
+  <div class="wrap">
+    <div class="eyebrow">Como se compra</div>
+    <h2 style="font-size:28px;font-weight:800;margin:8px 0 28px;max-width:600px;">Licitações por modalidade</h2>
+    <div class="chart-card">
+      <h2>Todas as modalidades, estado inteiro</h2>
+      <p class="note" id="modalidade-note">carregando…</p>
+      <div class="chart-wrap"><canvas id="modalidadeChart"></canvas></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="anual">
+  <div class="wrap">
+    <div class="eyebrow">Evolução</div>
+    <h2 style="font-size:28px;font-weight:800;margin:8px 0 28px;max-width:600px;">Volume por ano</h2>
+    <div class="chart-card">
+      <h2 id="ano-chart-title">Licitações</h2>
+      <p class="note" id="ano-note">carregando…</p>
+      <div class="chart-wrap short"><canvas id="anoChart"></canvas></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="drilldown">
+  <div class="wrap">
+    <div class="eyebrow">Drill-down</div>
+    <h2 style="font-size:28px;font-weight:800;margin:8px 0 20px;max-width:600px;">Veja um município por dentro</h2>
+    <div class="drill-search-row">
+      <input class="search-input" id="drillSearch" type="text" list="municipiosList" placeholder="Digite o nome de um município..." oninput="renderDrill()" style="min-width:300px;">
+      <datalist id="municipiosList"></datalist>
+    </div>
+    <div class="drill-panel" id="drillPanel">
+      <p class="drill-empty">Digite o nome de um município acima (ou clique numa linha da tabela abaixo) pra ver a composição por ano e por modalidade.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="tabela">
+  <div class="wrap">
+    <div class="eyebrow">Dado completo</div>
+    <h2 style="font-size:28px;font-weight:800;margin:8px 0 28px;max-width:600px;">Os 397 municípios, um por um</h2>
+    <div class="table-toolbar">
+      <input class="search-input" id="searchBox" type="text" placeholder="Buscar município..." oninput="currentPage = 1; renderTable();">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <span class="table-count" id="tableCount"></span>
+        <a class="btn btn-ghost" href="data/licitacoes_parana_2024_2026.csv.gz" download style="padding:8px 16px;font-size:13.5px;">
+          Baixar todas as licitações (CSV)
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+    </div>
+    <p style="font-size:13.5px;color:var(--gray-500);margin:0 0 16px;">Um arquivo só com as 263.451 licitações do estado inteiro (2024-2026, todos os municípios) - pra filtrar no Excel, Google Sheets ou outra ferramenta, sem limite de uma cidade por vez. Vem compactado (.csv.gz, ~20MB em vez de 111MB) - a maioria dos navegadores e sistemas descompacta com duplo clique; no Windows, se precisar, o 7-Zip abre direto.</p>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th onclick="sortBy('rank')">#</th>
+            <th onclick="sortBy('municipio')">Município</th>
+            <th onclick="sortBy('codigo_ibge')">Código IBGE</th>
+            <th class="num" onclick="sortBy('total')">Licitações</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div class="table-pagination" id="tablePagination">
+      <button type="button" class="page-btn" id="pagePrev" aria-label="Página anterior" onclick="goToPage(currentPage - 1)">‹</button>
+      <span class="page-info" id="pageInfo">Página 1 de 1</span>
+      <button type="button" class="page-btn" id="pageNext" aria-label="Próxima página" onclick="goToPage(currentPage + 1)">›</button>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="limitacoes" style="padding-bottom:0;">
+  <div class="wrap">
+    <div class="caveats">
+      <h2>Limitações dos dados</h2>
+      <ul>
+        <li id="caveat-valor">carregando…</li>
+        <li>O ano de referência é a data de publicação no PNCP, não a data de assinatura ou vigência do contrato.</li>
+        <li id="caveat-ano-parcial">carregando…</li>
+        <li id="caveat-sem-registro">carregando…</li>
+        <li>Modalidade é a classificação enviada pelo próprio órgão ao PNCP - não há reclassificação nem verificação cruzada nesta coleta.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Farol do Paraná · dados públicos do PNCP · atualizado a partir da coleta estadual 2024–2026</p>
+    <p>Um projeto de Kelven Alcantara</p>
+  </div>
+</footer>
+
+<script>
+  // ---- Theme toggle ----
+  var toggle = document.getElementById('theme-toggle');
+  function currentTheme() {
+    var attr = document.documentElement.getAttribute('data-theme');
+    if (attr) return attr;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function applyTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('farol-theme', t);
+    toggle.setAttribute('aria-pressed', t === 'dark');
+    refreshChartColors();
+  }
+  toggle.setAttribute('aria-pressed', currentTheme() === 'dark');
+  toggle.addEventListener('click', function () {
+    applyTheme(currentTheme() === 'dark' ? 'light' : 'dark');
+  });
+
+  // ---- Mobile nav toggle ----
+  var navToggle = document.getElementById('nav-toggle');
+  var navPanel = document.getElementById('nav-mobile-panel');
+  function closeNavPanel() {
+    navPanel.classList.remove('open');
+    navToggle.setAttribute('aria-expanded', 'false');
+  }
+  navToggle.addEventListener('click', function () {
+    var open = navPanel.classList.toggle('open');
+    navToggle.setAttribute('aria-expanded', open);
+  });
+  navPanel.querySelectorAll('a').forEach(function (a) {
+    a.addEventListener('click', closeNavPanel);
+  });
+  window.addEventListener('resize', function () {
+    if (window.innerWidth > 860) closeNavPanel();
+  });
+
+  // ---- Dados ----
+  // Fonte: farol-engine/data/raw/pncp_hive/licitacoes (Camada 1)
+  // Gerado por: farol-engine/scripts/exportar_licitacoes.py --destino ../farol-parana/data
+  // Pra atualizar no mes que vem: rode o script de novo no farol-engine e cole
+  // data/licitacoes_municipios.js + data/licitacoes_stats.js por cima destes
+  // dois arquivos -- o resto desta pagina (HTML e JS) nao muda.
+  var STATS = window.LICITACOES_STATS;
+  var DATA = window.LICITACOES_MUNICIPIOS;
+  var MUNI_BY_NOME = {};
+  DATA.forEach(function (m) { MUNI_BY_NOME[m.municipio.toLowerCase()] = m; });
+
+  function fmt(n) { return n.toLocaleString('pt-BR'); }
+  function fmtInt(n) { return Math.round(n).toLocaleString('pt-BR'); }
+  function escHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function setText(id, text) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+
+  // ---- Preenche todo texto/numero da pagina a partir de STATS ----
+  // Nada aqui e hardcoded: qualquer coisa que mudar no proximo export do
+  // farol-engine (novos totais, novo ano, nova modalidade lider) aparece
+  // automaticamente, sem tocar neste arquivo.
+  function populateStaticText() {
+    var anoMin = STATS.por_ano[0].ano;
+    var anoMax = STATS.por_ano[STATS.por_ano.length - 1].ano;
+    var periodo = anoMin + '–' + anoMax;
+    var semRegistro = STATS.municipios_total_pr - STATS.municipios_cobertos;
+    var pctCobertos = (STATS.municipios_cobertos / STATS.municipios_total_pr * 100)
+      .toFixed(1).replace('.', ',');
+    var gerado = new Date(STATS.gerado_em);
+    var dataFmt = gerado.toLocaleDateString('pt-BR');
+    var lm = STATS.lider_modalidade;
+    var lmPct = Math.round(lm.n / STATS.total_licitacoes * 100);
+
+    setText('intro-text',
+      fmt(STATS.total_licitacoes) + ' licitações publicadas no PNCP entre ' + anoMin +
+      ' e ' + anoMax + ', cobrindo ' + STATS.municipios_cobertos + ' dos ' +
+      STATS.municipios_total_pr + ' municípios do estado, com modalidade e ano ' +
+      'disponíveis por registro.');
+
+    setText('source-tag-text',
+      'Fonte: PNCP, coleta estadual reconciliada ' + periodo + ' · atualizado ' + dataFmt);
+
+    setText('valor-note-text', STATS.nota_valor);
+
+    setText('kpi-total', fmt(STATS.total_licitacoes));
+    setText('kpi-total-sub', periodo + ' · PNCP');
+    setText('kpi-lider-municipio', STATS.lider_municipio.municipio);
+    setText('kpi-lider-municipio-sub', fmt(STATS.lider_municipio.total) + ' licitações');
+    setText('kpi-lider-modalidade', lm.modalidade);
+    setText('kpi-lider-modalidade-sub', '~' + lmPct + '% de todas as licitações');
+    setText('kpi-municipios', STATS.municipios_cobertos);
+    setText('kpi-municipios-total', STATS.municipios_total_pr);
+    setText('kpi-municipios-sub', pctCobertos + '% do estado · ' + semRegistro + ' sem registro identificado');
+
+    setText('modalidade-note', 'Pregão Eletrônico e Dispensa de Licitação somados respondem pela maior parte do volume - ' + lm.modalidade + ' lidera com ~' + lmPct + '%.');
+
+    setText('ano-chart-title', 'Licitações, ' + periodo);
+    setText('ano-note', anoMax + ' é parcial - a coleta cobre até a margem de segurança de 7 dias antes de hoje, não o ano inteiro.');
+
+    setText('caveat-valor', STATS.nota_valor);
+    setText('caveat-ano-parcial', anoMax + ' é parcial: a coleta cobre até a margem de segurança de ~7 dias antes de hoje, não o ano inteiro.');
+    setText('caveat-sem-registro', 'Os ' + semRegistro + ' município' + (semRegistro === 1 ? '' : 's') + ' sem registro não ' +
+      (semRegistro === 1 ? 'foi identificado' : 'foram identificados') + ' por nome nesta coleta - isso exigiria cruzar contra a lista oficial dos ' +
+      STATS.municipios_total_pr + ' códigos IBGE do PR, que ainda não está disponível nesta base.');
+
+    var list = document.getElementById('municipiosList');
+    list.innerHTML = DATA.map(function (m) { return '<option value="' + m.municipio + '"></option>'; }).join('');
+  }
+
+  populateStaticText();
+
+  var modalidadeChart, anoChart;
+
+  function buildCharts() {
+    var accent = cssVar('--accent');
+    var gray500 = cssVar('--gray-500');
+
+    modalidadeChart = new Chart(document.getElementById('modalidadeChart').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: STATS.por_modalidade.map(function (r) { return r.modalidade; }),
+        datasets: [{ label: 'Licitações', data: STATS.por_modalidade.map(function (r) { return r.n; }), backgroundColor: accent }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'y',
+        scales: { x: { ticks: { callback: function (v) { return fmt(v); } } } },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: function (ctx) { return fmt(ctx.parsed.x) + ' licitações'; } } }
+        }
+      }
+    });
+
+    anoChart = new Chart(document.getElementById('anoChart').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: STATS.por_ano.map(function (r) { return r.ano; }),
+        datasets: [{ label: 'Licitações', data: STATS.por_ano.map(function (r) { return r.n; }), backgroundColor: accent, borderRadius: 4 }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: function (ctx) { return fmt(ctx.parsed.y) + ' licitações'; } } }
+        },
+        scales: { y: { beginAtZero: true, ticks: { callback: function (v) { return fmt(v); } } } }
+      }
+    });
+  }
+
+  function refreshChartColors() {
+    if (!modalidadeChart) return;
+    var accent = cssVar('--accent');
+    modalidadeChart.data.datasets[0].backgroundColor = accent;
+    modalidadeChart.update();
+    anoChart.data.datasets[0].backgroundColor = accent;
+    anoChart.update();
+  }
+
+  buildCharts();
+
+  // ---- Drill-down por município ----
+  function renderDrill() {
+    var q = document.getElementById('drillSearch').value.trim().toLowerCase();
+    var panel = document.getElementById('drillPanel');
+    if (!q) {
+      panel.innerHTML = '<p class="drill-empty">Digite o nome de um município acima (ou clique numa linha da tabela abaixo) pra ver a composição por ano e por modalidade.</p>';
+      return;
+    }
+    var m = MUNI_BY_NOME[q];
+    if (!m) {
+      panel.innerHTML = '<p class="drill-empty">Nenhum município chamado "' + q + '" encontrado.</p>';
+      return;
+    }
+    var maxModalidade = Math.max.apply(null, m.por_modalidade.map(function (x) { return x.n; }));
+    var modalidadeHtml = m.por_modalidade.map(function (x) {
+      var pct = Math.round(x.n / maxModalidade * 100);
+      return '<div class="modalidade-bar-row">' +
+        '<div class="modalidade-bar-label">' + x.modalidade + '</div>' +
+        '<div class="modalidade-bar-track"><div class="modalidade-bar-fill" style="width:' + pct + '%;"></div></div>' +
+        '<div class="modalidade-bar-value">' + fmt(x.n) + '</div>' +
+        '</div>';
+    }).join('');
+    var anoHtml = m.por_ano.map(function (x) {
+      return '<div class="drill-ano-cell"><div class="v tabular">' + fmt(x.n) + '</div><div class="l">' + x.ano + '</div></div>';
+    }).join('');
+    panel.innerHTML =
+      '<div class="drill-heading"><h3>' + m.municipio + '</h3><span class="rank">' + fmt(m.total) + ' licitações · #' + m.rank + ' no ranking estadual</span></div>' +
+      '<div class="drill-cols">' +
+        '<div><div class="drill-sub">Por modalidade</div>' + modalidadeHtml + '</div>' +
+        '<div><div class="drill-sub">Por ano</div><div class="drill-ano-row">' + anoHtml + '</div></div>' +
+      '</div>' +
+      '<div class="drill-registros" id="drillRegistros">' +
+        '<div class="drill-sub">Licitações individuais</div>' +
+        '<div id="drillRegistrosBody"><p class="drill-empty">Carregando ' + fmt(m.total) + ' licitaç' + (m.total === 1 ? 'ão' : 'ões') + '...</p></div>' +
+      '</div>';
+    if (drillCodigoAtual === m.codigo_ibge && drillRegistroRows.length) {
+      renderDrillRegistrosTable(); // já carregado (mesmo município re-selecionado) - só redesenha
+    } else {
+      loadRegistroDetalhe(m.codigo_ibge, m.municipio);
+    }
+  }
+
+  // ---- Licitações individuais do município selecionado ----
+  // Carregado sob demanda via <script src="data/licitacoes/{codigo}.js">:
+  // funciona em file:// (script local não é bloqueado por CORS, ao contrário
+  // de fetch()) e evita carregar as 263 mil licitações do estado inteiro só
+  // porque alguém abriu o drill-down de um município.
+  var drillCodigoAtual = null;
+  var drillRegistroRows = [];
+  var drillSortCol = 'data';
+  var drillSortDir = 'desc';
+  var drillPage = 1;
+  var DRILL_PAGE_SIZE = 25;
+
+  function loadRegistroDetalhe(codigo, nomeMunicipio) {
+    drillCodigoAtual = codigo;
+    var old = document.getElementById('drill-detalhe-script');
+    if (old) old.remove();
+    window.LICITACOES_DETALHE = null;
+
+    var script = document.createElement('script');
+    script.id = 'drill-detalhe-script';
+    script.src = 'data/licitacoes/' + codigo + '.js';
+    script.onload = function () {
+      if (drillCodigoAtual !== codigo) return; // usuário já trocou de município
+      drillRegistroRows = window.LICITACOES_DETALHE || [];
+      drillSortCol = 'data';
+      drillSortDir = 'desc';
+      drillPage = 1;
+      renderDrillRegistrosTable();
+    };
+    script.onerror = function () {
+      if (drillCodigoAtual !== codigo) return;
+      var body = document.getElementById('drillRegistrosBody');
+      if (body) body.innerHTML = '<p class="drill-empty">Não foi possível carregar as licitações individuais de ' + nomeMunicipio + '.</p>';
+    };
+    document.head.appendChild(script);
+  }
+
+  function drillSortBy(col) {
+    if (drillSortCol === col) {
+      drillSortDir = drillSortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      drillSortCol = col;
+      drillSortDir = (col === 'valor_estimado' || col === 'valor_homologado' || col === 'data') ? 'desc' : 'asc';
+    }
+    drillPage = 1;
+    renderDrillRegistrosRows();
+  }
+
+  function drillGoToPage(p) {
+    drillPage = p;
+    renderDrillRegistrosRows();
+  }
+
+  // Monta a casca (input de busca + cabeçalho + paginação) UMA única vez; a
+  // cada busca/ordenação/página só o <tbody> e os textos de contagem são
+  // atualizados. Isso evita recriar o <input> a cada tecla digitada, o que
+  // faria o foco pular pro <body> e só aceitaria 1 caractere por clique.
+  function renderDrillRegistrosTable() {
+    var body = document.getElementById('drillRegistrosBody');
+    if (!body) return;
+
+    if (!drillRegistroRows.length) {
+      body.innerHTML = '<p class="drill-empty">Nenhuma licitação individual encontrada.</p>';
+      return;
+    }
+
+    body.innerHTML =
+      '<div class="drill-registros-toolbar">' +
+        '<input class="search-input" id="drillRegistroSearch" type="text" placeholder="Buscar por órgão, objeto ou modalidade...">' +
+        '<span class="table-count" id="drillRegistroCount"></span>' +
+      '</div>' +
+      '<div class="data-table-wrap">' +
+        '<table class="data-table data-table-detalhe">' +
+          '<colgroup>' +
+            '<col style="width:8%">' +
+            '<col style="width:17%">' +
+            '<col style="width:24%">' +
+            '<col style="width:12%">' +
+            '<col style="width:13%">' +
+            '<col style="width:13%">' +
+            '<col style="width:9%">' +
+          '</colgroup>' +
+          '<thead><tr>' +
+            '<th onclick="drillSortBy(\'data\')">Data</th>' +
+            '<th onclick="drillSortBy(\'orgao\')">Órgão</th>' +
+            '<th>Objeto</th>' +
+            '<th onclick="drillSortBy(\'modalidade\')">Modalidade</th>' +
+            '<th class="num" onclick="drillSortBy(\'valor_estimado\')" title="valorTotalEstimado do PNCP -- previsão pré-lance. A fonte tem erros de digitação conhecidos nesse campo (quantidade/preço unitário incorretos); trate como referência, não como fato.">Valor estimado</th>' +
+            '<th class="num" onclick="drillSortBy(\'valor_homologado\')" title="valorTotalHomologado do PNCP -- valor real aprovado depois que a licitação tem resultado registrado. Fica em branco (-) antes disso.">Valor homologado</th>' +
+            '<th>Fonte</th>' +
+          '</tr></thead>' +
+          '<tbody id="drillRegistroTableBody"></tbody>' +
+        '</table>' +
+      '</div>' +
+      '<div class="table-pagination">' +
+        '<button type="button" class="page-btn" id="drillRegistroPagePrev" onclick="drillGoToPage(drillPage - 1)">‹</button>' +
+        '<span class="page-info" id="drillRegistroPageInfo"></span>' +
+        '<button type="button" class="page-btn" id="drillRegistroPageNext" onclick="drillGoToPage(drillPage + 1)">›</button>' +
+      '</div>';
+
+    document.getElementById('drillRegistroSearch').addEventListener('input', function () {
+      drillPage = 1;
+      renderDrillRegistrosRows();
+    });
+
+    renderDrillRegistrosRows();
+  }
+
+  // Duas colunas separadas desde 03/08/2026 (antes era uma só, com selo
+  // dizendo qual das duas estava sendo mostrada). "estimado" =
+  // valorTotalEstimado do PNCP (pré-lance): é onde moram os outliers
+  // grosseiros de digitação de quantidade na fonte (ex.: um serviço comum
+  // registrado na casa dos trilhões) -- sempre existe desde a publicação
+  // do edital. "homologado" = valorTotalHomologado, só existe em dado
+  // recoletado depois de 31/07/2026 e só é > 0 depois que a licitação tem
+  // resultado registrado -- quando disponível, é o valor real aprovado,
+  // não uma estimativa. Fica "-" antes disso (não é dado faltando, é a
+  // licitação ainda não ter sido decidida).
+  function renderValorEstimadoCell(r) {
+    return r.valor_estimado == null ? '-' : fmt(r.valor_estimado);
+  }
+  function renderValorHomologadoCell(r) {
+    return r.valor_homologado == null ? '-' : fmt(r.valor_homologado);
+  }
+
+  // Só atualiza linhas/contagem/paginação -- nunca recria o <input> de busca.
+  function renderDrillRegistrosRows() {
+    var searchEl = document.getElementById('drillRegistroSearch');
+    var q = searchEl ? searchEl.value.trim().toLowerCase() : '';
+
+    var rows = drillRegistroRows.filter(function (r) {
+      if (!q) return true;
+      return (r.orgao || '').toLowerCase().indexOf(q) !== -1 ||
+             (r.objeto || '').toLowerCase().indexOf(q) !== -1 ||
+             (r.modalidade || '').toLowerCase().indexOf(q) !== -1;
+    });
+    rows = rows.slice().sort(function (a, b) {
+      var av = a[drillSortCol], bv = b[drillSortCol];
+      if (av == null) av = '';
+      if (bv == null) bv = '';
+      if (typeof av === 'string') { av = av.toLowerCase(); bv = bv.toLowerCase(); }
+      var cmp = av < bv ? -1 : av > bv ? 1 : 0;
+      return drillSortDir === 'asc' ? cmp : -cmp;
+    });
+
+    var totalPages = Math.max(1, Math.ceil(rows.length / DRILL_PAGE_SIZE));
+    if (drillPage > totalPages) drillPage = totalPages;
+    if (drillPage < 1) drillPage = 1;
+    var startIdx = (drillPage - 1) * DRILL_PAGE_SIZE;
+    var pageRows = rows.slice(startIdx, startIdx + DRILL_PAGE_SIZE);
+
+    var rowsHtml = pageRows.map(function (r) {
+      return '<tr>' +
+        '<td>' + escHtml(r.data || '-') + '</td>' +
+        '<td class="registro-orgao" title="' + escHtml(r.orgao || '') + '">' + escHtml(r.orgao || '-') + '</td>' +
+        '<td class="registro-objeto">' + escHtml(r.objeto || '-') + '</td>' +
+        '<td>' + escHtml(r.modalidade || '-') + '</td>' +
+        '<td class="num">' + renderValorEstimadoCell(r) + '</td>' +
+        '<td class="num">' + renderValorHomologadoCell(r) + '</td>' +
+        '<td>' + (r.link ? '<a class="registro-link" href="' + escHtml(r.link) + '" target="_blank" rel="noopener">Ver no PNCP ↗</a>' : '-') + '</td>' +
+        '</tr>';
+    }).join('');
+
+    var tbody = document.getElementById('drillRegistroTableBody');
+    if (tbody) tbody.innerHTML = rowsHtml;
+
+    var countEl = document.getElementById('drillRegistroCount');
+    if (countEl) countEl.textContent = rows.length + ' de ' + drillRegistroRows.length + ' licitações';
+
+    var pageInfo = document.getElementById('drillRegistroPageInfo');
+    if (pageInfo) pageInfo.textContent = 'Página ' + drillPage + ' de ' + totalPages;
+    var prevBtn = document.getElementById('drillRegistroPagePrev');
+    if (prevBtn) prevBtn.disabled = drillPage <= 1;
+    var nextBtn = document.getElementById('drillRegistroPageNext');
+    if (nextBtn) nextBtn.disabled = drillPage >= totalPages;
+  }
+
+  // ---- Tabela sortável/buscável, paginada ----
+  var sortCol = 'rank';
+  var sortDir = 'asc';
+  var currentPage = 1;
+  var PAGE_SIZE = 50;
+
+  function sortBy(col) {
+    if (sortCol === col) {
+      sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      sortCol = col;
+      sortDir = (col === 'municipio' || col === 'codigo_ibge') ? 'asc' : 'desc';
+    }
+    currentPage = 1;
+    renderTable();
+  }
+
+  function goToPage(p) {
+    currentPage = p;
+    renderTable();
+  }
+
+  function selectMunicipioFromTable(nome) {
+    document.getElementById('drillSearch').value = nome;
+    renderDrill();
+    document.getElementById('drilldown').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function renderTable() {
+    var q = document.getElementById('searchBox').value.trim().toLowerCase();
+    var rows = DATA.filter(function (r) { return !q || r.municipio.toLowerCase().indexOf(q) !== -1; });
+    rows = rows.slice().sort(function (a, b) {
+      var av = a[sortCol], bv = b[sortCol];
+      if (typeof av === 'string') { av = av.toLowerCase(); bv = bv.toLowerCase(); }
+      var cmp = av < bv ? -1 : av > bv ? 1 : 0;
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+
+    var totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+    var startIdx = (currentPage - 1) * PAGE_SIZE;
+    var pageRows = rows.slice(startIdx, startIdx + PAGE_SIZE);
+
+    document.getElementById('tableCount').textContent = rows.length + ' de ' + DATA.length + ' municípios';
+    var tbody = document.getElementById('tableBody');
+    tbody.innerHTML = pageRows.map(function (r) {
+      return '<tr onclick="selectMunicipioFromTable(\'' + r.municipio.replace(/'/g, "\\'") + '\')">' +
+        '<td class="rank-cell">' + r.rank + '</td>' +
+        '<td>' + r.municipio + '</td>' +
+        '<td>' + r.codigo_ibge + '</td>' +
+        '<td class="num"><strong>' + fmt(r.total) + '</strong></td>' +
+        '</tr>';
+    }).join('');
+
+    document.getElementById('pageInfo').textContent = 'Página ' + currentPage + ' de ' + totalPages;
+    document.getElementById('pagePrev').disabled = currentPage <= 1;
+    document.getElementById('pageNext').disabled = currentPage >= totalPages;
+  }
+
+  renderTable();
+</script>
+
+</body>
+</html>

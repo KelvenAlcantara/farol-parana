@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel - Farol do Paraná</title>
+<meta name="description" content="Painel de cobertura estadual: 263.364 licitações e 218.103 contratos em 397 de 399 municípios do Paraná, 2024–2026, direto do PNCP.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/farol-tokens.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
+<!-- Dado real do farol-engine. Pra atualizar o painel inteiro no mês que vem:
+     rode `python scripts/exportar_painel.py --destino ../farol-parana/data` no
+     farol-engine e cole esses 2 arquivos por cima destes - nada mais muda. -->
+<script src="data/painel_cobertura_resumo.js"></script>
+<script src="data/painel_cobertura_stats.js"></script>
+<script>
+  (function () {
+    var saved = localStorage.getItem('farol-theme');
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+  })();
+</script>
+<style>
+  .page-head {
+    padding: 48px 0 40px;
+    border-bottom: 1px solid var(--border);
+  }
+  .page-head h1 {
+    font-size: clamp(30px, 4vw, 44px);
+    font-weight: 900;
+    margin: 8px 0 12px;
+    letter-spacing: -0.02em;
+  }
+  .page-head p {
+    max-width: 640px;
+    font-size: 16.5px;
+    line-height: 1.6;
+    color: var(--gray-700);
+    margin: 0;
+  }
+  .source-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 18px;
+    font-size: 13px;
+    color: var(--gray-500);
+  }
+  .source-tag svg { flex-shrink: 0; }
+
+  .chart-card {
+    border: 1px solid var(--border);
+    padding: 28px;
+  }
+  .chart-card h2 {
+    font-size: 20px;
+    font-weight: 800;
+    margin: 0 0 4px;
+  }
+  .chart-card .note {
+    font-size: 13.5px;
+    color: var(--gray-500);
+    margin: 0 0 20px;
+  }
+  .chart-wrap { position: relative; height: 420px; }
+  .chart-wrap.short { height: 260px; }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 2px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-top: 24px;
+  }
+  .stats-cell {
+    background: var(--bg);
+    padding: 20px 16px;
+    text-align: center;
+  }
+  .stats-cell .v {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 22px;
+  }
+  .stats-cell .l {
+    font-size: 12px;
+    color: var(--gray-500);
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .table-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .search-input {
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    color: var(--ink);
+    padding: 10px 16px;
+    border-radius: var(--radius);
+    font-size: 14.5px;
+    font-family: var(--font-body);
+    min-width: 240px;
+  }
+  .search-input:focus { outline: none; border-color: var(--ink); }
+  .table-count { font-size: 13.5px; color: var(--gray-500); }
+
+  .data-table-wrap {
+    border: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  table.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  table.data-table th, table.data-table td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  table.data-table th {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gray-500);
+    cursor: pointer;
+    user-select: none;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+  }
+  table.data-table th:hover { color: var(--ink); }
+  table.data-table td.num, table.data-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  table.data-table tr:last-child td { border-bottom: none; }
+  .rank-cell { color: var(--gray-500); font-variant-numeric: tabular-nums; }
+
+  .table-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    margin-top: 18px;
+  }
+  .page-btn {
+    border: 1.5px solid var(--border);
+    background: var(--bg);
+    color: var(--ink);
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .page-btn:hover:not(:disabled) { border-color: var(--ink); }
+  .page-btn:disabled { opacity: 0.35; cursor: default; }
+  .page-info { font-size: 13.5px; color: var(--gray-500); font-variant-numeric: tabular-nums; }
+
+  .caveats {
+    border: 1px solid var(--border);
+    padding: 28px;
+  }
+  .caveats h2 { font-size: 18px; font-weight: 800; margin: 0 0 14px; }
+  .caveats ul { margin: 0; padding-left: 20px; }
+  .caveats li { font-size: 14.5px; line-height: 1.6; color: var(--gray-700); margin-bottom: 10px; }
+  .caveats li:last-child { margin-bottom: 0; }
+
+  /* ---------- Banner fotográfico full-bleed (mesmo padrão do
+     .araucaria-banner da home - nome próprio aqui porque a foto é outra,
+     mas a receita visual é a mesma: scrim verde-escuro + grão + legenda). ---------- */
+  .iguacu-banner {
+    position: relative;
+    margin-top: 56px;
+    height: 46vh;
+    min-height: 300px;
+    overflow: hidden;
+  }
+  .iguacu-banner img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    filter: contrast(1.06) brightness(0.98);
+    display: block;
+  }
+  .iguacu-banner::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 0%, transparent 50%, oklch(0.16 0.035 152 / 0.30) 100%);
+  }
+  .iguacu-banner .grain { position: absolute; inset: 0; opacity: 0.5; mix-blend-mode: overlay; }
+  .iguacu-scrim {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 60%;
+    background: linear-gradient(180deg, transparent 0%, oklch(0.17 0.035 152 / 0.5) 35%, oklch(0.13 0.03 152 / 0.92) 100%);
+  }
+  .iguacu-content {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 36px 40px 30px;
+    color: oklch(0.985 0.002 250);
+    z-index: 1;
+  }
+  .iguacu-content .eyebrow { color: oklch(0.985 0.002 250); opacity: 0.8; }
+  .iguacu-content h2 { font-size: 23px; font-weight: 800; max-width: 600px; margin: 8px 0 0; color: oklch(0.985 0.002 250); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="brand" href="index.html" aria-label="Farol do Paraná - início">
+    <svg width="22" height="44" viewBox="0 0 60 120" fill="none">
+      <polygon points="18,108 42,108 38,98 22,98" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+      <polygon points="24,98 36,98 33,30 27,30" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+      <line x1="24.6" y1="90" x2="35.4" y2="90" stroke="currentColor" stroke-width="2"/>
+      <line x1="25.6" y1="76" x2="34.4" y2="76" stroke="currentColor" stroke-width="2"/>
+      <line x1="26.6" y1="62" x2="33.4" y2="62" stroke="currentColor" stroke-width="2"/>
+      <line x1="27.6" y1="48" x2="32.4" y2="48" stroke="currentColor" stroke-width="2"/>
+      <polygon points="27,30 33,30 38,26 22,26" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>
+      <rect x="25" y="14" width="10" height="12" stroke="currentColor" stroke-width="2.6"/>
+      <line x1="30" y1="14" x2="30" y2="26" stroke="currentColor" stroke-width="1.8"/>
+      <path d="M24,14 Q30,6 36,14 Z" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/>
+      <line x1="30" y1="6" x2="30" y2="2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="30" cy="1.3" r="1.7" fill="currentColor"/>
+    </svg>
+    <span>
+      <span class="brand-name" style="display:block;">Farol do Paraná</span>
+      <span class="brand-sub">Transparência em compras públicas · PR</span>
+    </span>
+  </a>
+
+  <nav class="nav-links" aria-label="Navegação principal">
+    <a href="painel.html" aria-current="page">Painel</a>
+    <a href="licitacoes.html">Licitações</a>
+    <a href="contratos.html">Contratos</a>
+    <a href="metodologia.html">Metodologia</a>
+    <a href="sobre.html">Sobre</a>
+  </nav>
+
+  <div class="header-right">
+    <button class="theme-toggle" id="theme-toggle" aria-label="Alternar modo claro/escuro" aria-pressed="false">
+      <span class="knob"></span>
+    </button>
+    <button class="nav-toggle" id="nav-toggle" aria-label="Abrir menu de navegação" aria-expanded="false" aria-controls="nav-mobile-panel">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</header>
+
+<nav class="nav-mobile-panel" id="nav-mobile-panel" aria-label="Navegação (mobile)">
+  <a href="painel.html" aria-current="page">Painel</a>
+  <a href="licitacoes.html">Licitações</a>
+  <a href="contratos.html">Contratos</a>
+  <a href="metodologia.html">Metodologia</a>
+  <a href="sobre.html">Sobre</a>
+</nav>
+
+<div class="wrap page-head">
+  <div class="eyebrow">Painel de cobertura estadual</div>
+  <h1>Onde o dinheiro público do Paraná está sendo movimentado</h1>
+  <p><span id="intro-text">carregando…</span></p>
+  <div class="source-tag">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3.5 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <span id="source-tag-text">carregando…</span>
+  </div>
+</div>
+
+<div class="wrap" style="margin-top:32px;">
+  <div class="caveats">
+    <h2>Como ler este painel</h2>
+    <ul>
+      <li>Cada número abaixo é <strong>contagem de registro publicado</strong> no PNCP - não é valor financeiro. Um município pode ter poucos registros de alto valor, ou muitos de baixo valor.</li>
+      <li>O ano mostrado é a <strong>data de publicação</strong> no PNCP, não a data de assinatura ou vigência do contrato.</li>
+      <li id="caveat-sem-registro">carregando…</li>
+      <li>No ranking por volume (Top 20 e tabela completa), municípios pequenos podem aparecer com volume desproporcional ao tamanho - sede de consórcio ou autarquia regional, por exemplo. Volume bruto não é "atividade per capita".</li>
+    </ul>
+  </div>
+</div>
+
+<section class="section" id="numeros">
+  <div class="wrap">
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <svg class="kpi-araucaria" width="22" height="22" viewBox="0 0 24 24" fill="none"><line x1="12" y1="23" x2="12" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12,16 Q7,17 4,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,16 Q17,17 20,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,8 Q9,9 7,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M12,8 Q15,9 17,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="4" cy="15" r="1.4" fill="currentColor"/><circle cx="20" cy="15" r="1.4" fill="currentColor"/><circle cx="12" cy="15.5" r="1" fill="currentColor"/><circle cx="7" cy="7" r="1.2" fill="currentColor"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/><circle cx="12" cy="6.3" r="0.9" fill="currentColor"/></svg>
+        <div class="kpi-label">Licitações</div>
+        <div class="kpi-value tabular" id="kpi-licitacoes">-</div>
+        <div class="kpi-sub" id="kpi-periodo-sub-1">-</div>
+      </div>
+      <div class="kpi-card">
+        <svg class="kpi-araucaria" width="22" height="22" viewBox="0 0 24 24" fill="none"><line x1="12" y1="23" x2="12" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12,16 Q7,17 4,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,16 Q17,17 20,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,8 Q9,9 7,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M12,8 Q15,9 17,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="4" cy="15" r="1.4" fill="currentColor"/><circle cx="20" cy="15" r="1.4" fill="currentColor"/><circle cx="12" cy="15.5" r="1" fill="currentColor"/><circle cx="7" cy="7" r="1.2" fill="currentColor"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/><circle cx="12" cy="6.3" r="0.9" fill="currentColor"/></svg>
+        <div class="kpi-label">Contratos</div>
+        <div class="kpi-value tabular" id="kpi-contratos">-</div>
+        <div class="kpi-sub" id="kpi-periodo-sub-2">-</div>
+      </div>
+      <div class="kpi-card">
+        <svg class="kpi-araucaria" width="22" height="22" viewBox="0 0 24 24" fill="none"><line x1="12" y1="23" x2="12" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12,16 Q7,17 4,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,16 Q17,17 20,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,8 Q9,9 7,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M12,8 Q15,9 17,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="4" cy="15" r="1.4" fill="currentColor"/><circle cx="20" cy="15" r="1.4" fill="currentColor"/><circle cx="12" cy="15.5" r="1" fill="currentColor"/><circle cx="7" cy="7" r="1.2" fill="currentColor"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/><circle cx="12" cy="6.3" r="0.9" fill="currentColor"/></svg>
+        <div class="kpi-label">Municípios cobertos</div>
+        <div class="kpi-value tabular"><span id="kpi-municipios">-</span><span style="color:var(--gray-700);font-size:0.5em;"> / <span id="kpi-municipios-total">-</span></span></div>
+        <div class="kpi-sub" id="kpi-municipios-sub">-</div>
+      </div>
+      <div class="kpi-card">
+        <svg class="kpi-araucaria" width="22" height="22" viewBox="0 0 24 24" fill="none"><line x1="12" y1="23" x2="12" y2="8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12,16 Q7,17 4,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,16 Q17,17 20,15" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M12,8 Q9,9 7,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><path d="M12,8 Q15,9 17,7" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/><circle cx="4" cy="15" r="1.4" fill="currentColor"/><circle cx="20" cy="15" r="1.4" fill="currentColor"/><circle cx="12" cy="15.5" r="1" fill="currentColor"/><circle cx="7" cy="7" r="1.2" fill="currentColor"/><circle cx="17" cy="7" r="1.2" fill="currentColor"/><circle cx="12" cy="6.3" r="0.9" fill="currentColor"/></svg>
+        <div class="kpi-label">Período</div>
+        <div class="kpi-value tabular" style="font-size:32px;" id="kpi-periodo">-</div>
+        <div class="kpi-sub" id="kpi-periodo-sub-3">-</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap" style="margin-top:56px;">
+  <div class="cobble"></div>
+</div>
+
+<!-- ============ FOZ DO IGUAÇU - banner full-bleed ============ -->
+<div class="iguacu-banner">
+  <img src="assets/img/foz%20do%20iguacu.jpg" alt="Cataratas do Iguaçu, em Foz do Iguaçu (PR)">
+  <svg class="grain" width="100%" height="100%"><filter id="iguacuNoise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#iguacuNoise)" opacity="0.35"/></svg>
+  <div class="iguacu-scrim"></div>
+  <div class="iguacu-content wrap">
+    <div class="eyebrow">Também é Paraná</div>
+    <h2>Foz do Iguaçu, cartão-postal do estado, é um dos 397 municípios acompanhados aqui - 5.545 licitações e contratos publicados só nela.</h2>
+  </div>
+</div>
+
+<section class="section" id="top20">
+  <div class="wrap">
+    <div class="eyebrow">Concentração</div>
+    <h2 style="font-size:28px;font-weight:800;margin:8px 0 28px;max-width:600px;">Top 20 municípios por volume</h2>
+    <div class="chart-card">
+      <h2>Licitações + contratos, por município</h2>
+      <p class="note" id="top20-note">carregando…</p>
+      <div class="chart-wrap"><canvas id="top20Chart"></canvas></div>
+    </div>
+    <div class="stats-row">
+      <div class="stats-cell"><div class="v tabular" id="stat-min">-</div><div class="l">Mínimo</div></div>
+      <div class="stats-cell"><div class="v tabular" id="stat-p25">-</div><div class="l">Percentil 25</div></div>
+      <div class="stats-cell"><div class="v tabular" id="stat-mediana">-</div><div class="l">Mediana</div></div>
+      <div class="stats-cell"><div class="v tabular" id="stat-p75">-</div><div class="l">Percentil 75</div></div>
+      <div class="stats-cell"><div class="v tabular" id="stat-max">-</div><div class="l" id="stat-max-label">Máximo</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="anual">
+  <div class="wrap">
+    <div class="eyebrow">Evolução</div>
+    <h2 style="font-size:28px;font-weight:800;margin:8px 0 28px;max-width:600px;">Volume por ano</h2>
+    <div class="chart-card">
+      <h2 id="ano-chart-title">Licitações e contratos</h2>
+      <p class="note" id="ano-note">carregando…</p>
+      <div class="chart-wrap short"><canvas id="anoChart"></canvas></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="tabela">
+  <div class="wrap">
+    <div class="eyebrow">Dado completo</div>
+    <h2 style="font-size:28px;font-weight:800;margin:8px 0 28px;max-width:600px;">Os 397 municípios, um por um</h2>
+    <div class="table-toolbar">
+      <input class="search-input" id="searchBox" type="text" placeholder="Buscar município..." oninput="currentPage = 1; renderTable();">
+      <span class="table-count" id="tableCount"></span>
+    </div>
+    <div class="data-table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th onclick="sortBy('rank')">#</th>
+            <th onclick="sortBy('municipio')">Município</th>
+            <th onclick="sortBy('codigo_ibge')">Código IBGE</th>
+            <th class="num" onclick="sortBy('total_licitacoes')">Licitações</th>
+            <th class="num" onclick="sortBy('total_contratos')">Contratos</th>
+            <th class="num" onclick="sortBy('total_geral')">Total</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div class="table-pagination" id="tablePagination">
+      <button type="button" class="page-btn" id="pagePrev" aria-label="Página anterior" onclick="goToPage(currentPage - 1)">‹</button>
+      <span class="page-info" id="pageInfo">Página 1 de 1</span>
+      <button type="button" class="page-btn" id="pageNext" aria-label="Próxima página" onclick="goToPage(currentPage + 1)">›</button>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="atualizacao" style="padding-bottom:0;">
+  <div class="wrap">
+    <div class="eyebrow">Um detalhe sobre o período mais recente</div>
+    <h2 style="font-size:28px;font-weight:800;margin:8px 0 20px;max-width:640px;">Por que o ano mais recente aparece parcial</h2>
+    <div style="max-width:720px;">
+      <p style="font-size:15.5px;line-height:1.7;color:var(--gray-700);margin:0;"><span id="caveat-ano-parcial">carregando…</span> Essa margem existe porque o PNCP continua recebendo publicações novas por dias depois do fato - fechar o mês cedo demais arriscaria mostrar um mês incompleto pra sempre, sem nunca mais voltar a completá-lo. Mais detalhes na <a href="metodologia.html#coleta" style="text-decoration:underline;text-underline-offset:3px;font-weight:600;color:var(--ink);">página de metodologia</a>.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Farol do Paraná · dados públicos do PNCP · atualizado a partir da coleta estadual 2024–2026</p>
+    <p>Um projeto de Kelven Alcantara</p>
+  </div>
+</footer>
+
+<script>
+  // ---- Theme toggle ----
+  var toggle = document.getElementById('theme-toggle');
+  function currentTheme() {
+    var attr = document.documentElement.getAttribute('data-theme');
+    if (attr) return attr;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function applyTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('farol-theme', t);
+    toggle.setAttribute('aria-pressed', t === 'dark');
+    refreshChartColors();
+  }
+  toggle.setAttribute('aria-pressed', currentTheme() === 'dark');
+  toggle.addEventListener('click', function () {
+    applyTheme(currentTheme() === 'dark' ? 'light' : 'dark');
+  });
+
+  // ---- Mobile nav toggle ----
+  var navToggle = document.getElementById('nav-toggle');
+  var navPanel = document.getElementById('nav-mobile-panel');
+  function closeNavPanel() {
+    navPanel.classList.remove('open');
+    navToggle.setAttribute('aria-expanded', 'false');
+  }
+  navToggle.addEventListener('click', function () {
+    var open = navPanel.classList.toggle('open');
+    navToggle.setAttribute('aria-expanded', open);
+  });
+  navPanel.querySelectorAll('a').forEach(function (a) {
+    a.addEventListener('click', closeNavPanel);
+  });
+  window.addEventListener('resize', function () {
+    if (window.innerWidth > 860) closeNavPanel();
+  });
+
+  // ---- Dados ----
+  // Fonte: farol-engine/data/gold/painel_cobertura*.parquet
+  // Gerado por: farol-engine/scripts/exportar_painel.py --destino ../farol-parana/data
+  // Pra atualizar no mes que vem: rode o script de novo no farol-engine e cole
+  // data/painel_cobertura_resumo.js + data/painel_cobertura_stats.js por cima
+  // destes dois arquivos -- o resto desta pagina (HTML e JS) nao muda.
+  var STATS = window.PAINEL_STATS;
+  var DATA = window.PAINEL_RESUMO;
+  var TOP20_LABELS = STATS.top20.map(function (r) { return r.municipio; });
+  var TOP20_LIC = STATS.top20.map(function (r) { return r.total_licitacoes; });
+  var TOP20_CTR = STATS.top20.map(function (r) { return r.total_contratos; });
+  var ANOS = STATS.por_ano.map(function (r) { return r.ano; });
+  var LIC_ANO = STATS.por_ano.map(function (r) { return r.licitacoes; });
+  var CTR_ANO = STATS.por_ano.map(function (r) { return r.contratos; });
+
+  function fmt(n) { return n.toLocaleString('pt-BR'); }
+  function fmtInt(n) { return Math.round(n).toLocaleString('pt-BR'); }
+  function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function setText(id, text) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = text;
+  }
+
+  // ---- Preenche todo texto/numero da pagina a partir de STATS ----
+  // Nada aqui e hardcoded: qualquer coisa que mudar no proximo export do
+  // farol-engine (novos totais, novo ano, novo lider do ranking) aparece
+  // automaticamente, sem tocar neste arquivo.
+  function populateStaticText() {
+    var d = STATS.distribuicao_total_geral;
+    var anoMin = ANOS[0];
+    var anoMax = ANOS[ANOS.length - 1];
+    var periodo = anoMin + '–' + anoMax;
+    var semRegistro = STATS.municipios_total_pr - STATS.municipios_cobertos;
+    var pctCobertos = (STATS.municipios_cobertos / STATS.municipios_total_pr * 100)
+      .toFixed(1).replace('.', ',');
+    var lider = STATS.top20[0];
+    var liderPct = Math.round(lider.total_geral / STATS.total_geral * 100);
+    var gerado = new Date(STATS.gerado_em);
+    var dataFmt = gerado.toLocaleDateString('pt-BR');
+
+    setText('intro-text',
+      fmt(STATS.total_licitacoes) + ' licitações e ' + fmt(STATS.total_contratos) +
+      ' contratos publicados no PNCP entre ' + anoMin + ' e ' + anoMax +
+      ', cobrindo ' + STATS.municipios_cobertos + ' dos ' + STATS.municipios_total_pr +
+      ' municípios do estado. Cada número abaixo é contagem de registro publicado - não estimativa, não amostra.');
+
+    setText('source-tag-text',
+      'Fonte: PNCP, coleta estadual reconciliada ' + periodo + ' · atualizado ' + dataFmt);
+
+    setText('kpi-licitacoes', fmt(STATS.total_licitacoes));
+    setText('kpi-periodo-sub-1', periodo + ' · PNCP');
+    setText('kpi-contratos', fmt(STATS.total_contratos));
+    setText('kpi-periodo-sub-2', periodo + ' · PNCP');
+    setText('kpi-municipios', STATS.municipios_cobertos);
+    setText('kpi-municipios-total', STATS.municipios_total_pr);
+    setText('kpi-municipios-sub', pctCobertos + '% do estado · ' + semRegistro + ' sem registro identificado');
+    setText('kpi-periodo', periodo);
+    setText('kpi-periodo-sub-3', anoMax + ' ainda parcial');
+
+    setText('top20-note', lider.municipio + ' sozinha responde por ~' + liderPct + '% do volume total do estado.');
+
+    setText('ano-chart-title', 'Licitações e contratos, ' + periodo);
+    setText('ano-note', anoMax + ' é parcial - a coleta cobre até a margem de segurança de 7 dias antes de hoje, não o ano inteiro.');
+    setText('caveat-ano-parcial', anoMax + ' é parcial: a coleta cobre até a margem de segurança de ~7 dias antes de hoje, não o ano inteiro.');
+    // Bom Jesus do Sul (IBGE 4102653) e Iracema do Oeste (IBGE 4116703) foram
+    // identificados e checados manualmente em 12/08/2026 (ver validação no
+    // projeto) - nenhum dos dois aparece na própria lista de referência de
+    // municípios do PNCP, ou seja, nenhum órgão das duas prefeituras nunca
+    // publicou lá. Guarda condicional: se uma próxima coleta mudar a
+    // contagem de município sem registro, cai pro texto genérico em vez de
+    // afirmar um achado que não bate mais com o dado.
+    if (semRegistro === 2) {
+      setText('caveat-sem-registro', 'Os 2 municípios sem registro são Bom Jesus do Sul e Iracema do Oeste - nenhum dos dois aparece na própria lista de referência de municípios do PNCP, o que indica que nenhum órgão das duas prefeituras jamais publicou lá (obrigatório desde 2023, Lei 14.133/2021, art. 174). Não é falha do Farol nem do PNCP: as duas cidades têm atividade de compras real e portal de transparência próprio - só não integram ao PNCP.');
+    } else {
+      setText('caveat-sem-registro', 'Os ' + semRegistro + ' município' + (semRegistro === 1 ? '' : 's') + ' sem registro não ' +
+        (semRegistro === 1 ? 'foi identificado' : 'foram identificados') + ' por nome nesta coleta - isso exigiria cruzar contra a lista oficial dos ' +
+        STATS.municipios_total_pr + ' códigos IBGE do PR, que ainda não está disponível nesta base.');
+    }
+
+    setText('stat-min', fmtInt(d.minimo));
+    setText('stat-p25', fmtInt(d.p25));
+    setText('stat-mediana', fmtInt(d.mediana));
+    setText('stat-p75', fmtInt(d.p75));
+    setText('stat-max', fmtInt(d.maximo));
+    setText('stat-max-label', 'Máximo (' + lider.municipio + ')');
+  }
+
+  populateStaticText();
+
+  var top20Chart, anoChart;
+
+  function buildCharts() {
+    var accent = cssVar('--accent');
+    var gray500 = cssVar('--gray-500');
+
+    top20Chart = new Chart(document.getElementById('top20Chart').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: TOP20_LABELS,
+        datasets: [
+          { label: 'Licitações', data: TOP20_LIC, backgroundColor: accent },
+          { label: 'Contratos', data: TOP20_CTR, backgroundColor: gray500 }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'y',
+        scales: {
+          x: { stacked: true, ticks: { callback: function (v) { return fmt(v); } } },
+          y: { stacked: true }
+        },
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: { callbacks: { label: function (ctx) { return ctx.dataset.label + ': ' + fmt(ctx.parsed.x); } } }
+        }
+      }
+    });
+
+    anoChart = new Chart(document.getElementById('anoChart').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: ANOS,
+        datasets: [
+          { label: 'Licitações', data: LIC_ANO, backgroundColor: accent, borderRadius: 4 },
+          { label: 'Contratos', data: CTR_ANO, backgroundColor: gray500, borderRadius: 4 }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: { callbacks: { label: function (ctx) { return ctx.dataset.label + ': ' + fmt(ctx.parsed.y); } } }
+        },
+        scales: { y: { beginAtZero: true, ticks: { callback: function (v) { return fmt(v); } } } }
+      }
+    });
+  }
+
+  function refreshChartColors() {
+    if (!top20Chart) return;
+    var accent = cssVar('--accent');
+    var gray500 = cssVar('--gray-500');
+    [top20Chart, anoChart].forEach(function (chart) {
+      chart.data.datasets[0].backgroundColor = accent;
+      chart.data.datasets[1].backgroundColor = gray500;
+      chart.update();
+    });
+  }
+
+  buildCharts();
+
+  // ---- Tabela sortável/buscável, paginada ----
+  var sortCol = 'rank';
+  var sortDir = 'asc';
+  var currentPage = 1;
+  var PAGE_SIZE = 50;
+
+  function sortBy(col) {
+    if (sortCol === col) {
+      sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      sortCol = col;
+      sortDir = (col === 'municipio' || col === 'codigo_ibge') ? 'asc' : 'desc';
+    }
+    currentPage = 1;
+    renderTable();
+  }
+
+  function goToPage(p) {
+    currentPage = p;
+    renderTable();
+  }
+
+  function renderTable() {
+    var q = document.getElementById('searchBox').value.trim().toLowerCase();
+    var rows = DATA.filter(function (r) { return !q || r.municipio.toLowerCase().indexOf(q) !== -1; });
+    rows = rows.slice().sort(function (a, b) {
+      var av = a[sortCol], bv = b[sortCol];
+      if (typeof av === 'string') { av = av.toLowerCase(); bv = bv.toLowerCase(); }
+      var cmp = av < bv ? -1 : av > bv ? 1 : 0;
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+
+    var totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+    var startIdx = (currentPage - 1) * PAGE_SIZE;
+    var pageRows = rows.slice(startIdx, startIdx + PAGE_SIZE);
+
+    document.getElementById('tableCount').textContent = rows.length + ' de ' + DATA.length + ' municípios';
+    var tbody = document.getElementById('tableBody');
+    tbody.innerHTML = pageRows.map(function (r) {
+      return '<tr>' +
+        '<td class="rank-cell">' + r.rank + '</td>' +
+        '<td>' + r.municipio + '</td>' +
+        '<td>' + r.codigo_ibge + '</td>' +
+        '<td class="num">' + fmt(r.total_licitacoes) + '</td>' +
+        '<td class="num">' + fmt(r.total_contratos) + '</td>' +
+        '<td class="num"><strong>' + fmt(r.total_geral) + '</strong></td>' +
+        '</tr>';
+    }).join('');
+
+    document.getElementById('pageInfo').textContent = 'Página ' + currentPage + ' de ' + totalPages;
+    document.getElementById('pagePrev').disabled = currentPage <= 1;
+    document.getElementById('pageNext').disabled = currentPage >= totalPages;
+  }
+
+  renderTable();
+</script>
+
+</body>
+</html>
