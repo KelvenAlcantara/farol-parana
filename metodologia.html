@@ -17,7 +17,12 @@
 </script>
 <style>
   .page-head {
-    padding: 48px 0 40px;
+    /* so top/bottom -- padding lateral tem que vir do .wrap (a classe
+       "page-head" e combinada com "wrap" no mesmo <div>); um shorthand
+       "padding: 48px 0 40px" aqui zerava o padding lateral do .wrap
+       inteiro, colando o titulo/eyebrow na borda da tela (achado 21/08) */
+    padding-top: 48px;
+    padding-bottom: 40px;
     border-bottom: 1px solid var(--border);
   }
   .page-head h1 {
