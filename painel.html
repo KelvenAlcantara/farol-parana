@@ -18,7 +18,7 @@
 <script>
   (function () {
     var saved = localStorage.getItem('farol-theme');
-    if (saved) document.documentElement.setAttribute('data-theme', saved);
+    document.documentElement.setAttribute('data-theme', saved || 'light');
   })();
 </script>
 <style>
@@ -65,6 +65,10 @@
   }
   .chart-wrap { position: relative; height: 420px; }
   .chart-wrap.short { height: 260px; }
+  @media (max-width: 600px) {
+    .chart-wrap { height: 280px; }
+    .chart-wrap.short { height: 200px; }
+  }
 
   .stats-row {
     display: grid;
@@ -74,6 +78,7 @@
     border: 1px solid var(--border);
     margin-top: 24px;
   }
+  @media (max-width: 700px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
   .stats-cell {
     background: var(--bg);
     padding: 20px 16px;
@@ -253,7 +258,10 @@
 
   <div class="header-right">
     <button class="theme-toggle" id="theme-toggle" aria-label="Alternar modo claro/escuro" aria-pressed="false">
-      <span class="knob"></span>
+      <span class="knob">
+        <svg class="icon-sun" width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="5" fill="currentColor"/><g stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="23"/><line x1="1" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="23" y2="12"/><line x1="4.2" y1="4.2" x2="6.3" y2="6.3"/><line x1="17.7" y1="17.7" x2="19.8" y2="19.8"/><line x1="4.2" y1="19.8" x2="6.3" y2="17.7"/><line x1="17.7" y1="6.3" x2="19.8" y2="4.2"/></g></svg>
+        <svg class="icon-moon" width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11z"/></svg>
+      </span>
     </button>
     <button class="nav-toggle" id="nav-toggle" aria-label="Abrir menu de navegação" aria-expanded="false" aria-controls="nav-mobile-panel">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -420,9 +428,7 @@
   // ---- Theme toggle ----
   var toggle = document.getElementById('theme-toggle');
   function currentTheme() {
-    var attr = document.documentElement.getAttribute('data-theme');
-    if (attr) return attr;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return document.documentElement.getAttribute('data-theme') || 'light';
   }
   function applyTheme(t) {
     document.documentElement.setAttribute('data-theme', t);
